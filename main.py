@@ -102,7 +102,7 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
         if key == ord(' '):  # Space: Play/Pause
             paused = not paused
         elif key == ord('='):  # Speed up
-            speed = min(speed + 0.25, 4)
+            speed = min(speed + 0.25, 10) # Max speed is 10x
             print(f"Speed: {speed}x")
         elif key == ord('-'):  # Slow down
             speed = max(speed - 0.25, 0.25)

@@ -79,6 +79,9 @@ def main():
                 print("End of video.")
                 break
             frame_pos = int(video.get(cv2.CAP_PROP_POS_FRAMES))
+            # Make the video window always on top
+            cv2.namedWindow("Video", cv2.WINDOW_NORMAL)
+            cv2.setWindowProperty("Video", cv2.WND_PROP_TOPMOST, 1)
             cv2.imshow("Video", frame)
         else:
             # If paused, still show the current frame
@@ -86,6 +89,8 @@ def main():
                 video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
             ret, frame = video.read()
             if ret:
+                cv2.namedWindow("Video", cv2.WINDOW_NORMAL)
+                cv2.setWindowProperty("Video", cv2.WND_PROP_TOPMOST, 1)
                 cv2.imshow("Video", frame)
                 video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)  # Stay on the same frame
 

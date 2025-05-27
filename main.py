@@ -75,6 +75,11 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
     print(controls_text)
     start_time_set = False
 
+    slider_max = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
+    slider_pos = 0
+    cv2.namedWindow("Video", cv2.WINDOW_NORMAL)
+    cv2.createTrackbar("Position", "Video", 0, slider_max, lambda x: None)
+
     while True:
         if not paused:
             ret, frame = video.read()
@@ -82,20 +87,25 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
                 print("End of video.")
                 break
             frame_pos = int(video.get(cv2.CAP_PROP_POS_FRAMES))
-            # Make the video window always on top
-            cv2.namedWindow("Video", cv2.WINDOW_NORMAL)
             cv2.setWindowProperty("Video", cv2.WND_PROP_TOPMOST, 1)
+            cv2.setTrackbarPos("Position", "Video", frame_pos)
             cv2.imshow("Video", frame)
         else:
-            # If paused, still show the current frame
             if int(video.get(cv2.CAP_PROP_POS_FRAMES)) != frame_pos:
                 video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
             ret, frame = video.read()
             if ret:
-                cv2.namedWindow("Video", cv2.WINDOW_NORMAL)
                 cv2.setWindowProperty("Video", cv2.WND_PROP_TOPMOST, 1)
+                cv2.setTrackbarPos("Position", "Video", frame_pos)
                 cv2.imshow("Video", frame)
-                video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)  # Stay on the same frame
+                video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
+
+        # Check if slider was moved
+        new_slider_pos = cv2.getTrackbarPos("Position", "Video")
+        if new_slider_pos != frame_pos:
+            frame_pos = new_slider_pos
+            video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
+            paused = True
 
         key = cv2.waitKey(0 if paused else int(30 / speed)) & 0xFF
 

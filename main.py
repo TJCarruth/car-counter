@@ -76,10 +76,6 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
     start_time_set = False
 
     while True:
-        # Always print controls at the top of each loop
-        os.system('cls' if os.name == 'nt' else 'clear')
-        print(controls_text)
-
         if not paused:
             ret, frame = video.read()
             if not ret:

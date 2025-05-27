@@ -164,6 +164,22 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
             display_csv_entries(csv_path)
         elif key == ord('q'):  # Quit
             break
+        elif key == ord('['):  # Skip back 5 minutes
+            fps = video.get(cv2.CAP_PROP_FPS)
+            frame_pos = max(0, frame_pos - int(fps * 60 * 5))
+            video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
+        elif key == ord(']'):  # Skip forward 5 minutes
+            fps = video.get(cv2.CAP_PROP_FPS)
+            frame_pos = min(int(video.get(cv2.CAP_PROP_FRAME_COUNT)) - 1, frame_pos + int(fps * 60 * 5))
+            video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
+        elif key == ord('{'):  # Skip back 1 hour
+            fps = video.get(cv2.CAP_PROP_FPS)
+            frame_pos = max(0, frame_pos - int(fps * 60 * 60))
+            video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
+        elif key == ord('}'):  # Skip forward 1 hour
+            fps = video.get(cv2.CAP_PROP_FPS)
+            frame_pos = min(int(video.get(cv2.CAP_PROP_FRAME_COUNT)) - 1, frame_pos + int(fps * 60 * 60))
+            video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
         elif key != 255 and start_time_set:  # Any other key: log observation (only if start time set)
             ms = video.get(cv2.CAP_PROP_POS_MSEC)
             timestamp_str = format_timestamp(ms, start_offset)

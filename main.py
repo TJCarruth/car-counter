@@ -93,7 +93,7 @@ def main():
 
         if key == ord(' '):  # Space: Play/Pause
             paused = not paused
-        elif key == ord('+'):  # Speed up
+        elif key == ord('='):  # Speed up
             speed = min(speed + 0.25, 4)
             print(f"Speed: {speed}x")
         elif key == ord('-'):  # Slow down

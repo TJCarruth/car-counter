@@ -67,12 +67,19 @@ def main():
     frame_pos = 0
     start_offset = timedelta()  # Default to zero
 
-    print("\nControls: Space=Play/Pause | +/-=Speed | Arrows=Skip | , .=Frame | Any key=Log | Backspace=Undo & Pause | q=Quit\n")
-    print("The video will start paused. When ready, press 's' to enter the start time (HH:MM:SS).")
+    controls_text = """
+Controls: Space=Play/Pause | +/-=Speed | Arrows=Skip | , .=Frame | Any key=Log | Backspace=Undo & Pause | q=Quit
+The video will start paused. When ready, press 's' to enter the start time (HH:MM:SS).
+"""
 
+    print(controls_text)
     start_time_set = False
 
     while True:
+        # Always print controls at the top of each loop
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(controls_text)
+
         if not paused:
             ret, frame = video.read()
             if not ret:

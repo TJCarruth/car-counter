@@ -81,7 +81,7 @@ def main():
     start_offset = timedelta()  # Default to zero
 
     controls_text = """
-Controls: Space=Play/Pause | +/-=Speed | Arrows=Skip | , .=Frame | Any key=Log | Backspace=Undo & Pause | q=Quit
+Controls: Space=Play/Pause | +/-=Speed | Arrows, [, ], {{, }} =Skip | , .=Frame | Any key=Log | Backspace=Undo & Pause | q=Quit
 The video will start paused. When ready, press 's' to enter the start time (HH:MM:SS).
 """
 

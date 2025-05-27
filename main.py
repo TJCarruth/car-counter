@@ -33,11 +33,19 @@ def display_csv_entries(csv_path, num_entries=5):
             print(line.strip())
 
 def parse_start_time(start_time_str):
+    # Accepts a string in HH:MM:SS or an integer/str with 6 digits (e.g. 000003 for 00:00:03)
     try:
-        dt = datetime.strptime(start_time_str, "%H:%M:%S")
-        return timedelta(hours=dt.hour, minutes=dt.minute, seconds=dt.second)
+        if start_time_str.isdigit() and len(start_time_str) == 6:
+            # Parse as HHMMSS
+            hours = int(start_time_str[:2])
+            minutes = int(start_time_str[2:4])
+            seconds = int(start_time_str[4:6])
+            return timedelta(hours=hours, minutes=minutes, seconds=seconds)
+        else:
+            dt = datetime.strptime(start_time_str, "%H:%M:%S")
+            return timedelta(hours=dt.hour, minutes=dt.minute, seconds=dt.second)
     except ValueError:
-        print("Invalid time format. Please use HH:MM:SS.")
+        print("Invalid time format. Please use HH:MM:SS or a 6-digit timestamp (HHMMSS).")
         return None
 
 def format_timestamp(ms, start_offset):
@@ -55,6 +63,11 @@ def main():
     selected_video = select_video(videos_dir)
     if not selected_video:
         return
+
+    # Extract last 6 digits from video name (before extension)
+    video_basename = os.path.splitext(selected_video)[0]
+    last_six = video_basename[-6:]
+    default_start_time = last_six if last_six.isdigit() else None
 
     video_path = os.path.join(videos_dir, selected_video)
     csv_path = os.path.join(script_dir, "output", f"{os.path.splitext(selected_video)[0]}.csv")
@@ -126,7 +139,14 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
         elif key == ord('s') and not start_time_set:  # Set start time
             paused = True
             while True:
-                start_time_str = input("Enter the video start time (HH:MM:SS): ")
+                prompt = f"Enter the video start time (HH:MM:SS or 6 digits)"
+                if default_start_time:
+                    prompt += f" [default: {default_start_time}]: "
+                else:
+                    prompt += ": "
+                start_time_str = input(prompt)
+                if not start_time_str and default_start_time:
+                    start_time_str = default_start_time
                 offset = parse_start_time(start_time_str)
                 if offset is not None:
                     start_offset = offset

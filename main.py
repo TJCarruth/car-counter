@@ -127,8 +127,11 @@ def main():
                     break
             paused = False
         elif key == 8:  # Backspace: Undo last observation and pause
-            logger.undo_last_entry()
-            print("Last observation removed.")
+            try:
+                logger.undo_last_entry()
+                print("Last observation removed.")
+            except Exception as e:
+                print(f"Nothing to undo: {e}")
             paused = True
             display_csv_entries(csv_path)
         elif key == ord('q'):  # Quit

@@ -77,10 +77,30 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
 
     slider_max = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
     slider_pos = 0
+    user_slider_drag = [False]
+    slider_target_frame = [0]
+
+    def on_trackbar(val):
+        user_slider_drag[0] = True
+        slider_target_frame[0] = val
+
     cv2.namedWindow("Video", cv2.WINDOW_NORMAL)
-    cv2.createTrackbar("Position", "Video", 0, slider_max, lambda x: None)
+    cv2.createTrackbar("Position", "Video", 0, slider_max, on_trackbar)
 
     while True:
+        # If user dragged the slider, show the frame at that position and pause
+        if user_slider_drag[0]:
+            frame_pos = slider_target_frame[0]
+            video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
+            ret, frame = video.read()
+            if ret:
+                cv2.setWindowProperty("Video", cv2.WND_PROP_TOPMOST, 1)
+                cv2.setTrackbarPos("Position", "Video", frame_pos)
+                cv2.imshow("Video", frame)
+            paused = True
+            user_slider_drag[0] = False
+            continue
+
         if not paused:
             ret, frame = video.read()
             if not ret:

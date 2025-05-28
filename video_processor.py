@@ -75,3 +75,38 @@ class VideoProcessor:
     def release(self):
         self.video_capture.release()
         cv2.destroyAllWindows()
+
+    def skip_frames(self, num_frames):
+        # Move forward or backward by num_frames (can be negative)
+        current_pos = int(self.video_capture.get(cv2.CAP_PROP_POS_FRAMES))
+        frame_count = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        new_pos = min(max(0, current_pos + num_frames), frame_count - 1)
+        self.video_capture.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+        return new_pos
+
+    def skip_seconds(self, seconds):
+        # Move forward or backward by a number of seconds (can be negative)
+        fps = self.video_capture.get(cv2.CAP_PROP_FPS)
+        frames_to_skip = int(fps * seconds)
+        return self.skip_frames(frames_to_skip)
+
+    def skip_minutes(self, minutes):
+        return self.skip_seconds(minutes * 60)
+
+    def skip_hours(self, hours):
+        return self.skip_seconds(hours * 3600)
+
+    def get_frame_pos(self):
+        return int(self.video_capture.get(cv2.CAP_PROP_POS_FRAMES))
+
+    def set_frame_pos(self, pos):
+        frame_count = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        pos = min(max(0, pos), frame_count - 1)
+        self.video_capture.set(cv2.CAP_PROP_POS_FRAMES, pos)
+        return pos
+
+    def get_fps(self):
+        return self.video_capture.get(cv2.CAP_PROP_FPS)
+
+    def get_frame_count(self):
+        return int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))

@@ -5,6 +5,9 @@ from csv_logger import CSVLogger
 from datetime import timedelta, datetime
 
 def main():
+
+    ## Background Initializations ##########################################################
+
     # Ensure the script is run from the correct directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
     videos_dir = os.path.join(script_dir, "videos")
@@ -25,14 +28,15 @@ def main():
     frame_pos = 0
     start_offset = timedelta()  # Default to zero
 
-    # Print the controls to terminal
+    ## Print the controls to terminal ##########################################
     controls_text = """
                     Controls: Space=Play/Pause | +/-=Speed | Arrows, [, ], {{, }} =Skip | , .=Frame | Any key=Log | Backspace=Undo & Pause | q=Quit
                     The video will start paused. When ready, press 's' to enter the start time (HH:MM:SS).
                     """
     print(controls_text)
 
-    
+    ## Determine the start time ##########################################################
+
     # Extract last 6 digits from video name (before extension) to use as default start time if available.
     # If the video name is something like "video_000003.mp4", it will use "00:00:03" as the default start time.
     video_basename = os.path.splitext(selected_video)[0]
@@ -56,7 +60,7 @@ def main():
             print(f"Start time set to {start_time_str}.")
             break
 
-    # Plays the video in a loop, allowing for controls to be used.
+    ## Video Playback Loop ##########################################################
     while True:
 
         # controls the playing and pausing of the video

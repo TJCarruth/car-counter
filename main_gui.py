@@ -65,6 +65,10 @@ class CarCounterGUI:
         self.root.bind('}', self.skip_forward_1hr)
         self.root.bind('<BackSpace>', self.undo)
         self.log_text.bind('<Button-1>', self.on_log_click)
+        # Bind all alphabet keys to log_key_event
+        for char in 'abcdefghijklmnopqrstuvwxyz':
+            self.root.bind(f'<KeyPress-{char}>', self.log_key_event)
+            self.root.bind(f'<KeyPress-{char.upper()}>', self.log_key_event)
 
     def open_video(self, event=None):
         path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov")])
@@ -281,6 +285,22 @@ class CarCounterGUI:
                     self.show_frame()
         except Exception:
             pass
+
+    def log_key_event(self, event):
+        if not self.logger or not self.video:
+            self.status.set("No video loaded.")
+            return
+        key = event.char
+        if not key.isalpha():
+            return
+        frame_idx = int(self.video.get(cv2.CAP_PROP_POS_FRAMES))
+        fps = self.video.get(cv2.CAP_PROP_FPS)
+        seconds = frame_idx / fps if fps > 0 else 0
+        ms = seconds * 1000
+        timestamp_str = VideoProcessor.format_timestamp(ms, self.start_offset)
+        self.logger.log_entry(key, timestamp_str)
+        self.status.set(f"Logged: {key} at {timestamp_str}")
+        self.update_log_display()
 
 if __name__ == "__main__":
     root = Tk()

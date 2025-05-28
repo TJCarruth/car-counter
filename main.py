@@ -4,34 +4,6 @@ from video_processor import VideoProcessor
 from csv_logger import CSVLogger
 from datetime import timedelta, datetime
 
-def select_video(videos_dir):
-    video_files = [f for f in os.listdir(videos_dir) if f.endswith(('.mp4', '.avi', '.mov'))]
-    if not video_files:
-        print("No video files found in the 'videos' folder.")
-        return None
-    print("Available videos:")
-    for idx, video in enumerate(video_files, start=1):
-        print(f"{idx}. {video}")
-    while True:
-        try:
-            choice = int(input("Enter the number of the video you want to use: "))
-            if 1 <= choice <= len(video_files):
-                return video_files[choice - 1]
-            else:
-                print("Invalid choice. Please select a valid number.")
-        except ValueError:
-            print("Invalid input. Please enter a number.")
-
-def display_csv_entries(csv_path, num_entries=5):
-    if not os.path.exists(csv_path):
-        print("No observations yet.")
-        return
-    with open(csv_path, 'r') as f:
-        lines = f.readlines()
-        print("\nLatest Observations:")
-        for line in lines[-num_entries:]:
-            print(line.strip())
-
 def parse_start_time(start_time_str):
     # Accepts a string in HH:MM:SS or an integer/str with 6 digits (e.g. 000003 for 00:00:03)
     try:
@@ -60,7 +32,7 @@ def format_timestamp(ms, start_offset):
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     videos_dir = os.path.join(script_dir, "videos")
-    selected_video = select_video(videos_dir)
+    selected_video = VideoProcessor.select_video(videos_dir)
     if not selected_video:
         return
 
@@ -161,7 +133,7 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
             except Exception as e:
                 print(f"Nothing to undo: {e}")
             paused = True
-            display_csv_entries(csv_path)
+            logger.display_entries()
         elif key == ord('q'):  # Quit
             break
         elif key == ord('['):  # Skip back 5 minutes
@@ -185,7 +157,7 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
             timestamp_str = format_timestamp(ms, start_offset)
             logger.log_entry(chr(key), timestamp_str)
             print(f"Logged: {chr(key)} at {timestamp_str}")
-            display_csv_entries(csv_path)
+            logger.display_entries()
         elif key != 255 and not start_time_set:
             print("Please set the start time first by pressing 's'.")
 

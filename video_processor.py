@@ -54,6 +54,12 @@ class VideoProcessor:
         hours += total_td.days * 24
         return f"{hours:02}:{minutes:02}:{seconds:02}:{milliseconds:03}"
 
+    @staticmethod
+    def extract_default_start_time(video_basename):
+        # Extract last 6 digits from video name (before extension) to use as default start time
+        last_six = video_basename[-6:]
+        return last_six if last_six.isdigit() else None
+
     def get_frame(self):
         ret, frame = self.video_capture.read()
         if not ret:

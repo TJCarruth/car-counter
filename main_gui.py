@@ -26,7 +26,12 @@ class CarCounterGUI:
         main_frame.pack(fill=BOTH, expand=True)
 
         # Video frame display
-        self.frame_label = Label(main_frame)
+        self.frame_width = 640  # Set your desired default width
+        self.frame_height = 480  # Set your desired default height
+        black_img = Image.new('RGB', (self.frame_width, self.frame_height), color='black')
+        self.blank_imgtk = ImageTk.PhotoImage(image=black_img)
+        self.frame_label = Label(main_frame, image=self.blank_imgtk)
+        self.frame_label.imgtk = self.blank_imgtk  # Keep reference!
         self.frame_label.pack(side=LEFT, padx=10, pady=10)
 
         # Log display
@@ -43,6 +48,7 @@ class CarCounterGUI:
         Button(root, text="Play/Pause", command=self.toggle_play).pack()
         Button(root, text="Log Event", command=self.log_event).pack()
         Button(root, text="Undo", command=self.undo).pack()
+        Button(root, text="Export Log", command=self.export_log).pack()
         Label(root, textvariable=self.status).pack()
 
         # Keyboard shortcuts
@@ -58,6 +64,7 @@ class CarCounterGUI:
         self.root.bind('{', self.skip_back_1hr)
         self.root.bind('}', self.skip_forward_1hr)
         self.root.bind('<BackSpace>', self.undo)
+        self.log_text.bind('<Button-1>', self.on_log_click)
 
     def open_video(self, event=None):
         path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov")])
@@ -114,16 +121,24 @@ class CarCounterGUI:
             self.update_log_display()
 
     def show_frame(self, frame=None):
-        if self.video:
-            if frame is None:
-                ret, frame = self.video.read()
-                if not ret:
-                    return
+        if self.video and frame is None:
+            ret, frame = self.video.read()
+            if not ret:
+                # If no frame, show black
+                self.frame_label.config(image=self.blank_imgtk)
+                self.frame_label.imgtk = self.blank_imgtk
+                return
+        if frame is not None:
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame_rgb)
+            img = img.resize((self.frame_width, self.frame_height))
             imgtk = ImageTk.PhotoImage(image=img)
             self.frame_label.imgtk = imgtk  # Keep reference!
             self.frame_label.config(image=imgtk)
+        else:
+            # If no frame, show black
+            self.frame_label.config(image=self.blank_imgtk)
+            self.frame_label.imgtk = self.blank_imgtk
 
     def speed_up(self, event=None):
         self.speed = min(self.speed + 0.25, 10)
@@ -197,6 +212,29 @@ class CarCounterGUI:
             vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
             self.show_frame()
 
+    def export_log(self):
+        if not self.logger:
+            self.status.set("No log to export.")
+            return
+        # Suggest a default name based on the video title
+        if self.video_path:
+            base = os.path.splitext(os.path.basename(self.video_path))[0]
+            suggested_name = base + ".csv"
+        else:
+            suggested_name = "log.csv"
+        export_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")],
+            initialfile=suggested_name
+        )
+        if export_path:
+            try:
+                with open(self.logger.filename, 'r') as src, open(export_path, 'w') as dst:
+                    dst.write(src.read())
+                self.status.set(f"Log exported to {os.path.basename(export_path)}")
+            except Exception as e:
+                self.status.set(f"Export failed: {e}")
+
     def update_log_display(self):
         if self.logger:
             try:
@@ -211,6 +249,38 @@ class CarCounterGUI:
         self.log_text.insert('end', log_content)
         self.log_text.see('end')  # Scroll to the bottom after updating
         self.log_text.config(state='disabled')
+
+    def on_log_click(self, event):
+        # Get the line number clicked
+        index = self.log_text.index(f'@{event.x},{event.y}')
+        line_number = int(index.split('.')[0])
+        # Get the line content
+        line_content = self.log_text.get(f'{line_number}.0', f'{line_number}.end').strip()
+        # Try to extract the timestamp (assumes format: timestamp, key)
+        if ',' in line_content:
+            timestamp_str = line_content.split(',')[0].strip()
+        elif ':' in line_content:
+            # If format is key, timestamp
+            timestamp_str = line_content.split(':', 1)[1].strip()
+        else:
+            return
+        # Parse the timestamp (expects HH:MM:SS:ms or HH:MM:SS)
+        try:
+            parts = timestamp_str.split(':')
+            if len(parts) >= 3:
+                hours = int(parts[0])
+                minutes = int(parts[1])
+                seconds = int(parts[2])
+                ms = int(parts[3]) if len(parts) > 3 else 0
+                total_seconds = hours * 3600 + minutes * 60 + seconds + ms / 1000.0
+                if self.video:
+                    fps = self.video.get(cv2.CAP_PROP_FPS)
+                    frame = int(total_seconds * fps)
+                    self.video.set(cv2.CAP_PROP_POS_FRAMES, frame)
+                    self.paused = True
+                    self.show_frame()
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     root = Tk()

@@ -4,31 +4,6 @@ from video_processor import VideoProcessor
 from csv_logger import CSVLogger
 from datetime import timedelta, datetime
 
-def parse_start_time(start_time_str):
-    # Accepts a string in HH:MM:SS or an integer/str with 6 digits (e.g. 000003 for 00:00:03)
-    try:
-        if start_time_str.isdigit() and len(start_time_str) == 6:
-            # Parse as HHMMSS
-            hours = int(start_time_str[:2])
-            minutes = int(start_time_str[2:4])
-            seconds = int(start_time_str[4:6])
-            return timedelta(hours=hours, minutes=minutes, seconds=seconds)
-        else:
-            dt = datetime.strptime(start_time_str, "%H:%M:%S")
-            return timedelta(hours=dt.hour, minutes=dt.minute, seconds=dt.second)
-    except ValueError:
-        print("Invalid time format. Please use HH:MM:SS or a 6-digit timestamp (HHMMSS).")
-        return None
-
-def format_timestamp(ms, start_offset):
-    video_td = timedelta(milliseconds=ms)
-    total_td = start_offset + video_td
-    hours, remainder = divmod(total_td.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    milliseconds = total_td.microseconds // 1000
-    hours += total_td.days * 24
-    return f"{hours:02}:{minutes:02}:{seconds:02}:{milliseconds:03}"
-
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     videos_dir = os.path.join(script_dir, "videos")
@@ -119,7 +94,7 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
                 start_time_str = input(prompt)
                 if not start_time_str and default_start_time:
                     start_time_str = default_start_time
-                offset = parse_start_time(start_time_str)
+                offset = VideoProcessor.parse_start_time(start_time_str)
                 if offset is not None:
                     start_offset = offset
                     start_time_set = True
@@ -154,7 +129,7 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
             video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
         elif key != 255 and start_time_set:  # Any other key: log observation (only if start time set)
             ms = video.get(cv2.CAP_PROP_POS_MSEC)
-            timestamp_str = format_timestamp(ms, start_offset)
+            timestamp_str = VideoProcessor.format_timestamp(ms, start_offset)
             logger.log_entry(chr(key), timestamp_str)
             print(f"Logged: {chr(key)} at {timestamp_str}")
             logger.display_entries()

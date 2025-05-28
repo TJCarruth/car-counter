@@ -1,5 +1,6 @@
 import cv2
 import os
+from datetime import timedelta, datetime
 
 class VideoProcessor:
     def __init__(self, video_path):
@@ -25,6 +26,33 @@ class VideoProcessor:
                     print("Invalid choice. Please select a valid number.")
             except ValueError:
                 print("Invalid input. Please enter a number.")
+
+    @staticmethod
+    def parse_start_time(start_time_str):
+        # Accepts a string in HH:MM:SS or an integer/str with 6 digits (e.g. 000003 for 00:00:03)
+        try:
+            if start_time_str.isdigit() and len(start_time_str) == 6:
+                # Parse as HHMMSS
+                hours = int(start_time_str[:2])
+                minutes = int(start_time_str[2:4])
+                seconds = int(start_time_str[4:6])
+                return timedelta(hours=hours, minutes=minutes, seconds=seconds)
+            else:
+                dt = datetime.strptime(start_time_str, "%H:%M:%S")
+                return timedelta(hours=dt.hour, minutes=dt.minute, seconds=dt.second)
+        except ValueError:
+            print("Invalid time format. Please use HH:MM:SS or a 6-digit timestamp (HHMMSS).")
+            return None
+
+    @staticmethod
+    def format_timestamp(ms, start_offset):
+        video_td = timedelta(milliseconds=ms)
+        total_td = start_offset + video_td
+        hours, remainder = divmod(total_td.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        milliseconds = total_td.microseconds // 1000
+        hours += total_td.days * 24
+        return f"{hours:02}:{minutes:02}:{seconds:02}:{milliseconds:03}"
 
     def get_frame(self):
         ret, frame = self.video_capture.read()

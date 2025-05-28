@@ -1,5 +1,12 @@
-## Bug List
+## Active Bug List ##
 1. When the video is paused, all keystrokes are recorded with the wrong timestamp
     It records accurately when playing, but if the video is skipped forward and paused, the timestamp gets messed up.
 
+3. Have to click back and forth between the video player and the terminal when starting the program.
+    Not necessarily a bug, but not user friendly.
+
+
+## Fixed Bugs ##
 2. The backspace key reports: "nothing to undo: 'CSVLogger' object has no attribute 'undo_last_entry'
+    commit ID: e24e3dab0f3a61298cd2f9708de82f08fb63c704
+

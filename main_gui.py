@@ -1,7 +1,7 @@
 import os
 import cv2
 import threading
-from tkinter import Tk, Button, Label, filedialog, StringVar
+from tkinter import Tk, Button, Label, filedialog, StringVar, Frame, Text, Scrollbar, RIGHT, Y, LEFT, BOTH
 from video_processor import VideoProcessor
 from csv_logger import CSVLogger
 from datetime import timedelta
@@ -21,9 +21,22 @@ class CarCounterGUI:
         self.status = StringVar()
         self.status.set("No video loaded.")
 
+        # Layout frame for video and log
+        main_frame = Frame(root)
+        main_frame.pack(fill=BOTH, expand=True)
+
         # Video frame display
-        self.frame_label = Label(root)
-        self.frame_label.pack()
+        self.frame_label = Label(main_frame)
+        self.frame_label.pack(side=LEFT, padx=10, pady=10)
+
+        # Log display
+        log_frame = Frame(main_frame)
+        log_frame.pack(side=LEFT, fill=Y, padx=10, pady=10)
+        self.log_text = Text(log_frame, width=40, height=25, state='disabled')
+        self.log_text.pack(side=LEFT, fill=Y)
+        scrollbar = Scrollbar(log_frame, command=self.log_text.yview)
+        scrollbar.pack(side=RIGHT, fill=Y)
+        self.log_text['yscrollcommand'] = scrollbar.set
 
         # GUI Controls
         Button(root, text="Open Video", command=self.open_video).pack()
@@ -57,6 +70,7 @@ class CarCounterGUI:
             self.paused = True
             self.frame_pos = 0
             self.show_frame()  # Show first frame
+            self.update_log_display()
 
     def toggle_play(self, event=None):
         if not self.video:
@@ -87,6 +101,7 @@ class CarCounterGUI:
         timestamp_str = VideoProcessor.format_timestamp(ms, self.start_offset)
         self.logger.log_entry("event", timestamp_str)
         self.status.set(f"Logged event at {timestamp_str}")
+        self.update_log_display()
 
     def undo(self, event=None):
         if self.logger:
@@ -95,6 +110,8 @@ class CarCounterGUI:
                 self.status.set("Last event undone.")
             except Exception as e:
                 self.status.set(str(e))
+            self.paused = True
+            self.update_log_display()
 
     def show_frame(self, frame=None):
         if self.video:
@@ -179,6 +196,21 @@ class CarCounterGUI:
             new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 60 * 60))
             vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
             self.show_frame()
+
+    def update_log_display(self):
+        if self.logger:
+            try:
+                with open(self.logger.filename, 'r') as f:
+                    log_content = f.read()
+            except Exception:
+                log_content = "No log file found."
+        else:
+            log_content = "No log file found."
+        self.log_text.config(state='normal')
+        self.log_text.delete(1.0, 'end')
+        self.log_text.insert('end', log_content)
+        self.log_text.see('end')  # Scroll to the bottom after updating
+        self.log_text.config(state='disabled')
 
 if __name__ == "__main__":
     root = Tk()

@@ -128,7 +128,11 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
             frame_pos = min(int(video.get(cv2.CAP_PROP_FRAME_COUNT)) - 1, frame_pos + int(fps * 60 * 60))
             video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
         elif key != 255 and start_time_set:  # Any other key: log observation (only if start time set)
-            ms = video.get(cv2.CAP_PROP_POS_MSEC)
+            # Use frame position and FPS to compute timestamp
+            fps = video.get(cv2.CAP_PROP_FPS)
+            frame_idx = int(video.get(cv2.CAP_PROP_POS_FRAMES))
+            seconds = frame_idx / fps if fps > 0 else 0
+            ms = seconds * 1000
             timestamp_str = VideoProcessor.format_timestamp(ms, start_offset)
             logger.log_entry(chr(key), timestamp_str)
             print(f"Logged: {chr(key)} at {timestamp_str}")

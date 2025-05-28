@@ -5,4 +5,3 @@ videos/*
 # But keep the folders themselves
 !output/.gitkeep
 !videos/.gitkeep
-__pycache__/csv_logger.cpython-313.pyc

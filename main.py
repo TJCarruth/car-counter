@@ -33,7 +33,24 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
 """
 
     print(controls_text)
-    start_time_set = False
+
+    # Prompt for start time BEFORE opening any OpenCV windows
+    while True:
+        prompt = f"Enter the video start time (HH:MM:SS or 6 digits)"
+        if default_start_time:
+            prompt += f" [default: {default_start_time}]: "
+        else:
+            prompt += ": "
+        start_time_str = input(prompt)
+        if not start_time_str and default_start_time:
+            start_time_str = default_start_time
+        offset = VideoProcessor.parse_start_time(start_time_str)
+        if offset is not None:
+            start_offset = offset
+            print(f"Start time set to {start_time_str}.")
+            break
+
+    start_time_set = True
 
     while True:
         if not paused:
@@ -83,24 +100,6 @@ The video will start paused. When ready, press 's' to enter the start time (HH:M
             frame_pos = min(int(video.get(cv2.CAP_PROP_FRAME_COUNT)) - 1, frame_pos + 1)
             video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
             paused = True
-        elif key == ord('s') and not start_time_set:  # Set start time
-            paused = True
-            while True:
-                prompt = f"Enter the video start time (HH:MM:SS or 6 digits)"
-                if default_start_time:
-                    prompt += f" [default: {default_start_time}]: "
-                else:
-                    prompt += ": "
-                start_time_str = input(prompt)
-                if not start_time_str and default_start_time:
-                    start_time_str = default_start_time
-                offset = VideoProcessor.parse_start_time(start_time_str)
-                if offset is not None:
-                    start_offset = offset
-                    start_time_set = True
-                    print(f"Start time set to {start_time_str}.")
-                    break
-            paused = False
         elif key == 8:  # Backspace: Undo last observation and pause
             try:
                 logger.undo_last_entry()

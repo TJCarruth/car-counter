@@ -5,6 +5,7 @@ from tkinter import Tk, Button, Label, filedialog, StringVar
 from video_processor import VideoProcessor
 from csv_logger import CSVLogger
 from datetime import timedelta
+from PIL import Image, ImageTk
 
 class CarCounterGUI:
     def __init__(self, root):
@@ -20,6 +21,9 @@ class CarCounterGUI:
         self.status = StringVar()
         self.status.set("No video loaded.")
 
+        # Video frame display
+        self.frame_label = Label(root)
+        self.frame_label.pack()
         # Controls
         Button(root, text="Open Video", command=self.open_video).pack()
         Button(root, text="Play/Pause", command=self.toggle_play).pack()
@@ -37,6 +41,7 @@ class CarCounterGUI:
             self.status.set(f"Loaded: {os.path.basename(path)}")
             self.paused = True
             self.frame_pos = 0
+            self.show_frame()  # Show first frame
 
     def toggle_play(self):
         if not self.video:
@@ -44,18 +49,17 @@ class CarCounterGUI:
             return
         self.paused = not self.paused
         if not self.paused:
-            threading.Thread(target=self.play_video, daemon=True).start()
+            self.play_video()
 
     def play_video(self):
-        while not self.paused and self.video.isOpened():
+        if not self.paused and self.video and self.video.isOpened():
             ret, frame = self.video.read()
             if not ret:
                 self.status.set("End of video.")
-                break
-            cv2.imshow("Video", frame)
-            if cv2.waitKey(int(30 / self.speed)) & 0xFF == ord('q'):
-                break
-        cv2.destroyAllWindows()
+                return
+            self.show_frame(frame)
+            delay = int(30 / self.speed)
+            self.root.after(delay, self.play_video)
 
     def log_event(self):
         if not self.logger or not self.video:
@@ -76,6 +80,18 @@ class CarCounterGUI:
                 self.status.set("Last event undone.")
             except Exception as e:
                 self.status.set(str(e))
+
+    def show_frame(self, frame=None):
+        if self.video:
+            if frame is None:
+                ret, frame = self.video.read()
+                if not ret:
+                    return
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame_rgb)
+            imgtk = ImageTk.PhotoImage(image=img)
+            self.frame_label.imgtk = imgtk  # Keep reference!
+            self.frame_label.config(image=imgtk)
 
 if __name__ == "__main__":
     root = Tk()

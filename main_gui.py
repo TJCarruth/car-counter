@@ -43,12 +43,15 @@ class CarCounterGUI:
         scrollbar.pack(side=RIGHT, fill=Y)
         self.log_text['yscrollcommand'] = scrollbar.set
 
-        # GUI Controls
-        Button(root, text="Open Video", command=self.open_video).pack()
-        Button(root, text="Play/Pause", command=self.toggle_play).pack()
-        Button(root, text="Log Event", command=self.log_event).pack()
-        Button(root, text="Undo", command=self.undo).pack()
-        Button(root, text="Export Log", command=self.export_log).pack()
+        # Button row under video and log
+        button_row = Frame(root)
+        button_row.pack(fill='x', pady=(0, 10))
+        self.open_btn = Button(button_row, text="Open Video", command=self.open_video)
+        self.open_btn.pack(side='left', padx=10)
+        self.export_btn = Button(button_row, text="Export Log", command=self.export_log)
+        self.export_btn.pack(side='right', padx=20)
+
+        # Status label at the bottom
         Label(root, textvariable=self.status).pack()
 
         # Keyboard shortcuts

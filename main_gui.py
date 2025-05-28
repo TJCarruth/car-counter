@@ -48,11 +48,22 @@ class CarCounterGUI:
         button_row.pack(fill='x', pady=(0, 10))
         self.open_btn = Button(button_row, text="Open Video", command=self.open_video)
         self.open_btn.pack(side='left', padx=10)
+
+        # Controls label in the middle
+        controls_text = (
+            "Space=Play/Pause | +/-=Playbck Speed | , .=Frame Shift | ; '=Skip 5s | [ ]=Skip 5min | { }=Skip 1hr | "
+            "Any letter=Log | Backspace=Undo | q=Quit"
+        )
+        self.controls_label = Label(button_row, text=controls_text, anchor='center')
+        self.controls_label.pack(side='left', expand=True, fill='x')
+
         self.export_btn = Button(button_row, text="Export Log", command=self.export_log)
         self.export_btn.pack(side='right', padx=20)
 
         # Status label at the bottom
-        Label(root, textvariable=self.status).pack()
+        self.status_label = Label(root)
+        self.status_label.pack()
+        self.update_status()
 
         # Keyboard shortcuts
         self.root.bind('<space>', self.toggle_play)
@@ -256,6 +267,11 @@ class CarCounterGUI:
         self.log_text.insert('end', log_content)
         self.log_text.see('end')  # Scroll to the bottom after updating
         self.log_text.config(state='disabled')
+
+    def update_status(self):
+        speed_str = f"Speed: {self.speed}x"
+        self.status_label.config(text=speed_str)
+        self.root.after(200, self.update_status)
 
     def on_log_click(self, event):
         # Get the line number clicked

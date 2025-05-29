@@ -52,17 +52,19 @@ class CarCounterGUI:
         side_panel = Frame(main_frame)
         side_panel.pack(side=LEFT, fill=Y, padx=5, pady=10)
 
-        # --- Keybinding buttons regrouped ---
-        # Open Video at the very top
-        self.open_btn = Button(side_panel, text="Open Video", command=self.open_video)
-        self.open_btn.pack(side='top', pady=(0, 8), fill='x')
+        # --- Keybinding buttons regrouped and evenly spaced ---
+        # Use a vertical container for all control groups
+        controls_container = Frame(side_panel)
+        controls_container.pack(fill='y', expand=True)
 
-        # Video playback controls
-        kb_btn_frame = Frame(side_panel)
-        kb_btn_frame.pack(fill='x', pady=(0, 10))
-        # Play/Pause (full width)
+        # Open Video at the very top
+        self.open_btn = Button(controls_container, text="Open Video", command=self.open_video)
+        self.open_btn.pack(side='top', pady=(0, 16), fill='x')
+
+        # Video playback controls (grouped)
+        kb_btn_frame = Frame(controls_container)
+        kb_btn_frame.pack(side='top', pady=(16, 16), fill='x')
         Button(kb_btn_frame, text="Play/Pause", command=self.toggle_play).pack(side='top', pady=1, fill='x')
-        # Speed +/- side by side
         speed_frame = Frame(kb_btn_frame)
         speed_frame.pack(fill='x', pady=1)
         Button(speed_frame, text="Speed +", command=self.speed_up).pack(side='left', expand=True, fill='x')
@@ -92,21 +94,21 @@ class CarCounterGUI:
         Button(skip1hr_frame, text="Skip -1hr", command=self.skip_back_1hr).pack(side='left', expand=True, fill='x')
         Button(skip1hr_frame, text="Skip +1hr", command=self.skip_forward_1hr).pack(side='left', expand=True, fill='x')
 
-        # Log-related buttons (vertical, after video controls)
-        log_btn_frame = Frame(side_panel)
-        log_btn_frame.pack(fill='x', pady=(0, 10))
+        # Log-related buttons (grouped) - move to bottom of controls_container
+        log_btn_frame = Frame(controls_container)
+        log_btn_frame.pack(side='bottom', pady=(16, 16), fill='x')
         self.export_btn = Button(log_btn_frame, text="Export Log", command=self.export_log)
         self.export_btn.pack(side='top', pady=2, fill='x')
         self.clear_btn = Button(log_btn_frame, text="Clear Log", command=self.clear_log)
         self.clear_btn.pack(side='top', pady=2, fill='x')
-        # Undo/Redo side by side
         undo_frame = Frame(log_btn_frame)
         undo_frame.pack(fill='x', pady=1)
-        Button(undo_frame, text="Undo", command=self.undo).pack(side='left', expand=True, fill='x')
+        Button(undo_frame, text="Undo", command=self.restore_last_undo).pack(side='left', expand=True, fill='x')
         Button(undo_frame, text="Redo", command=self.redo).pack(side='left', expand=True, fill='x')
+        Button(log_btn_frame, text="Delete Entry", command=self.undo).pack(side='top', pady=2, fill='x')
 
-        # Quit button at the very bottom
-        Button(side_panel, text="Save and Quit", command=self.quit_app).pack(side='bottom', pady=8, fill='x')
+        # Quit button at the very bottom, spaced from above
+        Button(side_panel, text="Save and Quit", command=self.quit_app).pack(side='bottom', pady=16, fill='x')
 
         # Prevent window from resizing automatically to fit widgets
         self.root.update_idletasks()
@@ -127,7 +129,7 @@ class CarCounterGUI:
         self.root.bind('{', self.skip_back_1hr)
         self.root.bind('}', self.skip_forward_1hr)
         self.root.bind('<BackSpace>', self.undo)
-        self.root.bind('<Control-z>', self.undo)  # Ctrl+Z for undo
+        self.root.bind('<Control-z>', self.restore_last_undo)  # Ctrl+Z for undo
         self.root.bind('<Control-y>', self.redo)  # Ctrl+Y for redo
         self.log_text.bind('<Button-1>', self.on_log_click)
         self.root.bind('q', self.quit_app)  # Quit key binding

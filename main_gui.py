@@ -298,7 +298,7 @@ class CarCounterGUI:
             except Exception as e:
                 self.status.set(f"Failed to clear log: {e}")
 
-    def update_log_display(self):
+    def update_log_display(self, highlight_line=None):
         if self.logger:
             try:
                 with open(self.logger.filename, 'r') as f:
@@ -310,7 +310,17 @@ class CarCounterGUI:
         self.log_text.config(state='normal')
         self.log_text.delete(1.0, 'end')
         self.log_text.insert('end', log_content)
-        self.log_text.see('end')  # Scroll to the bottom after updating
+        lines = log_content.splitlines()
+        if lines:
+            if highlight_line is None:
+                highlight_line = len(lines)
+            # Remove previous highlight
+            self.log_text.tag_remove('highlight', '1.0', 'end')
+            # Highlight the specified entry
+            self.log_text.tag_add('highlight', f'{highlight_line}.0', f'{highlight_line}.end')
+            self.log_text.tag_configure('highlight', background='yellow')
+            # Center the display around the highlighted entry
+            self.log_text.see(f'{highlight_line}.0')
         self.log_text.config(state='disabled')
 
     def update_status(self):
@@ -386,9 +396,6 @@ class CarCounterGUI:
             pass
 
     def log_key_event(self, event):
-        if not self.logger or not self.video:
-            self.status.set("No video loaded.")
-            return
         key = event.char
         if not key.isalpha():
             return
@@ -399,8 +406,19 @@ class CarCounterGUI:
         timestamp_str = VideoProcessor.format_timestamp(ms, self.start_offset)
         self.logger.log_entry(key, timestamp_str)
         self.sort_log_file()
-        self.status.set(f"Logged: {key} at {timestamp_str}")
-        self.update_log_display()
+        # Find the line number of the just-logged event (match both timestamp and key)
+        highlight_line = None
+        try:
+            with open(self.logger.filename, 'r') as f:
+                lines = [line for line in f if line.strip()]
+            for idx, line in enumerate(lines, 1):
+                parts = line.strip().split(',')
+                if len(parts) >= 2 and parts[0].strip() == timestamp_str and parts[1].strip() == key:
+                    highlight_line = idx
+                    break
+        except Exception:
+            highlight_line = None
+        self.update_log_display(highlight_line=highlight_line)
 
 if __name__ == "__main__":
     root = Tk()

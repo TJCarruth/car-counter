@@ -48,9 +48,11 @@ class VideoProcessor:
     @staticmethod
     def prev_frame(gui):
         if gui.video:
-            gui.video.set(cv2.CAP_PROP_POS_FRAMES, max(0, gui.video.get(cv2.CAP_PROP_POS_FRAMES) - 1))
+            current_pos = int(gui.video.get(cv2.CAP_PROP_POS_FRAMES))
+            new_pos = max(0, current_pos - 1)
+            gui.video.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
             gui.paused = True
-            gui.show_frame()
+            VideoProcessor.show_frame(gui)
 
     @staticmethod
     def next_frame(gui):

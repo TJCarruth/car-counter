@@ -71,7 +71,6 @@ class CarCounterGUI:
         self.status_label = Label(speed_frame, anchor='center', width=5)
         self.status_label.pack(side='left', padx=4, fill='x', expand=True)
         Button(speed_frame, text="Speed +", command=lambda: VideoProcessor.speed_up(self)).pack(side='left', expand=True, fill='x')
-        self.update_status()
         # Frame shift side by side
         frame_frame = Frame(kb_btn_frame)
         frame_frame.pack(fill='x', pady=1)
@@ -139,10 +138,6 @@ class CarCounterGUI:
             self.root.bind(f'<KeyPress-{char.upper()}>', self.log_key_event)
 
 ## GUI Functions ##########################################################
-
-    def update_status(self):
-        self.status_label.config(text=f"{self.speed}x")
-        self.root.after(200, self.update_status)
 
     def open_video(self, event=None):
         path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov")])

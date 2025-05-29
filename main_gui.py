@@ -18,9 +18,6 @@ class CarCounterGUI:
         self.video = None
         self.logger = None
         self.video_path = ""
-        self.status = StringVar()
-        self.last_removed_entry = None
-        self.last_removed_index = None
         self.undo_stack = []  # Stack of (entry, index)
         self.redo_stack = []  # Stack of (entry, index)
 
@@ -45,19 +42,14 @@ class CarCounterGUI:
         self.frame_label = Label(main_frame, image=self.blank_imgtk, bg='black')
         self.frame_label.imgtk = self.blank_imgtk  # Keep reference!
         self.frame_label.pack(side=LEFT, padx=10, pady=10)
-        # Remove dynamic resizing
-        # self.frame_label.bind('<Configure>', self.on_frame_resize)
-
-        # --- Side panel between video and log ---
-        side_panel = Frame(main_frame)
-        side_panel.pack(side=LEFT, fill=Y, padx=5, pady=10)
-
-        # --- Keybinding buttons regrouped and evenly spaced ---
-        # Use a vertical container for all control groups
-        controls_container = Frame(side_panel)
+        
+        
+        # Use a vertical container for all controls
+        controls_container = Frame(main_frame)
+        controls_container.pack(side=LEFT, fill=Y, padx=5, pady=10)
         controls_container.pack(fill='y', expand=True)
 
-        # Open Video at the very top
+        # Open Video Button at the very top
         self.open_btn = Button(controls_container, text="Open Video", command=self.open_video)
         self.open_btn.pack(side='top', pady=(0, 16), fill='x')
 
@@ -106,7 +98,7 @@ class CarCounterGUI:
         Button(log_btn_frame, text="Delete Entry", command=lambda: self.logger.undo(self)).pack(side='top', pady=2, fill='x')
 
         # Quit button at the very bottom, spaced from above
-        Button(side_panel, text="Save and Quit", command=self.root.quit).pack(side='bottom', pady=16, fill='x')
+        Button(controls_container, text="Save and Quit", command=self.root.quit).pack(side='bottom', pady=16, fill='x')
 
         # Prevent window from resizing automatically to fit widgets
         # Had issues with the window continuously resizing
@@ -116,22 +108,23 @@ class CarCounterGUI:
         self.root.resizable(False, False)
 
         # Keyboard shortcuts
-        self.root.bind('<space>', lambda e: VideoProcessor.toggle_play(self))
-        self.root.bind('<KeyPress-equal>', lambda e: VideoProcessor.speed_up(self))
-        self.root.bind('<KeyPress-minus>', lambda e: VideoProcessor.slow_down(self))
-        self.root.bind('<comma>', lambda e: VideoProcessor.prev_frame(self))
-        self.root.bind('<period>', lambda e: VideoProcessor.next_frame(self))
-        self.root.bind('<semicolon>', lambda e: VideoProcessor.skip_back_5s(self))
-        self.root.bind("'", lambda e: VideoProcessor.skip_forward_5s(self))
-        self.root.bind('[', lambda e: VideoProcessor.skip_back_5min(self))
-        self.root.bind(']', lambda e: VideoProcessor.skip_forward_5min(self))
-        self.root.bind('{', lambda e: VideoProcessor.skip_back_1hr(self))
-        self.root.bind('}', lambda e: VideoProcessor.skip_forward_1hr(self))
-        self.root.bind('<BackSpace>', lambda e: self.logger.undo(self))
-        self.root.bind('<Control-z>', lambda e: self.logger.restore_last_undo(self))  # Ctrl+Z for undo
-        self.root.bind('<Control-y>', lambda e: self.logger.redo(self))  # Ctrl+Y for redo
-        self.log_text.bind('<Button-1>', self.on_log_click)
-        self.root.bind('<Escape>', lambda e: self.root.quit())  # Escape key to quit
+        self.root.bind('<space>', lambda e: VideoProcessor.toggle_play(self))           # space to toggle play/pause
+        self.root.bind('<KeyPress-equal>', lambda e: VideoProcessor.speed_up(self))     # equal key to speed up
+        self.root.bind('<KeyPress-minus>', lambda e: VideoProcessor.slow_down(self))    # minus key to slow down
+        self.root.bind('<comma>', lambda e: VideoProcessor.prev_frame(self))            # comma to go to previous frame
+        self.root.bind('<period>', lambda e: VideoProcessor.next_frame(self))           # period to go to next frame
+        self.root.bind('<semicolon>', lambda e: VideoProcessor.skip_back_5s(self))      # semicolon to skip back 5 seconds
+        self.root.bind("'", lambda e: VideoProcessor.skip_forward_5s(self))             # apostrophe to skip forward 5 seconds
+        self.root.bind('[', lambda e: VideoProcessor.skip_back_5min(self))              # left bracket to skip back 5 minutes
+        self.root.bind(']', lambda e: VideoProcessor.skip_forward_5min(self))           # right bracket to skip forward 5 minutes
+        self.root.bind('{', lambda e: VideoProcessor.skip_back_1hr(self))               # left brace to skip back 1 hour
+        self.root.bind('}', lambda e: VideoProcessor.skip_forward_1hr(self))            # right brace to skip forward 1 hour
+        self.root.bind('<BackSpace>', lambda e: self.logger.undo(self))                 # Backspace to delete last entry
+        self.root.bind('<Control-z>', lambda e: self.logger.restore_last_undo(self))    # Ctrl+Z for undo
+        self.root.bind('<Control-y>', lambda e: self.logger.redo(self))                 # Ctrl+Y for redo
+        self.log_text.bind('<Button-1>', self.on_log_click)                             # Click on log to highlight entry
+        self.root.bind('<Escape>', lambda e: self.root.quit())                          # Escape key to quit
+
         # Bind all alphabet keys to log_key_event
         for char in 'abcdefghijklmnopqrstuvwxyz':
             self.root.bind(f'<KeyPress-{char}>', self.log_key_event)

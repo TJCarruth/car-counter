@@ -86,7 +86,7 @@ class CarCounterGUI:
 
         # Log-related buttons (grouped)
         log_btn_frame = Frame(controls_container)
-        log_btn_frame.pack(side='bottom', pady=(16, 16), fill='x')
+        log_btn_frame.pack(side='top', pady=(40, 16), fill='x')
         self.export_btn = Button(log_btn_frame, text="Export Log", command=lambda: self.logger.export_log(self))
         self.export_btn.pack(side='top', pady=2, fill='x')
         self.clear_btn = Button(log_btn_frame, text="Clear Log", command=lambda: self.logger.clear_log(self))
@@ -95,7 +95,9 @@ class CarCounterGUI:
         undo_frame.pack(fill='x', pady=1)
         Button(undo_frame, text="Undo", command=lambda: self.logger.restore_last_undo(self)).pack(side='left', expand=True, fill='x')
         Button(undo_frame, text="Redo", command=lambda: self.logger.redo(self)).pack(side='left', expand=True, fill='x')
-        Button(log_btn_frame, text="Delete Entry", command=lambda: self.logger.undo(self)).pack(side='top', pady=2, fill='x')
+
+        # Delete entry button at the bottom of the controls container
+        Button(log_btn_frame, text="Delete Entry", command=lambda: self.logger.undo(self)).pack(side='bottom', pady=2, fill='x')
 
         # Quit button at the very bottom, spaced from above
         Button(controls_container, text="Save and Quit", command=self.root.quit).pack(side='bottom', pady=16, fill='x')

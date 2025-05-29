@@ -155,10 +155,26 @@ class CarCounterGUI:
 
     def undo(self, event=None):
         if self.logger:
+            # Get the currently highlighted line
             try:
-                self.logger.undo_last_entry()
-                self.sort_log_file()
-            except Exception as e:
+                ranges = self.log_text.tag_ranges('highlight')
+                if ranges:
+                    start = ranges[0]
+                    line_number = int(str(start).split('.')[0])
+                    # Read all lines
+                    with open(self.logger.filename, 'r') as f:
+                        lines = [line for line in f if line.strip()]
+                    if 1 <= line_number <= len(lines):
+                        # Remove the highlighted line
+                        del lines[line_number - 1]
+                        with open(self.logger.filename, 'w') as f:
+                            f.writelines(lines)
+                        self.sort_log_file()
+                else:
+                    # Fallback: undo last entry
+                    self.logger.undo_last_entry()
+                    self.sort_log_file()
+            except Exception:
                 pass
             self.paused = True
             self.update_log_display()

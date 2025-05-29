@@ -155,6 +155,7 @@ class CarCounterGUI:
         ms = seconds * 1000
         timestamp_str = VideoProcessor.format_timestamp(ms, self.start_offset)
         self.logger.log_entry("event", timestamp_str)
+        self.sort_log_file()
         self.status.set(f"Logged event at {timestamp_str}")
         self.update_log_display()
 
@@ -162,6 +163,7 @@ class CarCounterGUI:
         if self.logger:
             try:
                 self.logger.undo_last_entry()
+                self.sort_log_file()
                 self.status.set("Last event undone.")
             except Exception as e:
                 self.status.set(str(e))
@@ -356,6 +358,33 @@ class CarCounterGUI:
         except Exception:
             pass
 
+    def sort_log_file(self):
+        if not self.logger:
+            return
+        import re
+        try:
+            with open(self.logger.filename, 'r') as f:
+                lines = [line for line in f if line.strip()]
+            def parse_ts(line):
+                if ',' in line:
+                    ts = line.split(',')[0].strip()
+                elif ':' in line:
+                    ts = line.split(':', 1)[1].strip()
+                else:
+                    return float('inf')
+                parts = re.split(r'[:]', ts)
+                try:
+                    h, m, s = int(parts[0]), int(parts[1]), int(parts[2])
+                    ms = int(parts[3]) if len(parts) > 3 else 0
+                    return h * 3600 + m * 60 + s + ms / 1000.0
+                except Exception:
+                    return float('inf')
+            lines.sort(key=parse_ts)
+            with open(self.logger.filename, 'w') as f:
+                f.writelines(lines)
+        except Exception:
+            pass
+
     def log_key_event(self, event):
         if not self.logger or not self.video:
             self.status.set("No video loaded.")
@@ -369,6 +398,7 @@ class CarCounterGUI:
         ms = seconds * 1000
         timestamp_str = VideoProcessor.format_timestamp(ms, self.start_offset)
         self.logger.log_entry(key, timestamp_str)
+        self.sort_log_file()
         self.status.set(f"Logged: {key} at {timestamp_str}")
         self.update_log_display()
 

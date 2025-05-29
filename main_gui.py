@@ -64,34 +64,34 @@ class CarCounterGUI:
         # Video playback controls (grouped)
         kb_btn_frame = Frame(controls_container)
         kb_btn_frame.pack(side='top', pady=(16, 16), fill='x')
-        Button(kb_btn_frame, text="Play/Pause", command=self.toggle_play).pack(side='top', pady=1, fill='x')
+        Button(kb_btn_frame, text="Play/Pause", command=lambda: VideoProcessor.toggle_play(self)).pack(side='top', pady=1, fill='x')
         speed_frame = Frame(kb_btn_frame)
         speed_frame.pack(fill='x', pady=1)
-        Button(speed_frame, text="Speed +", command=self.speed_up).pack(side='left', expand=True, fill='x')
+        Button(speed_frame, text="Speed +", command=lambda: setattr(self, 'speed', VideoProcessor.speed_up(self.speed))).pack(side='left', expand=True, fill='x')
         self.status_label = Label(speed_frame, anchor='center', width=5)
         self.status_label.pack(side='left', padx=4, fill='x', expand=True)
-        Button(speed_frame, text="Speed -", command=self.slow_down).pack(side='left', expand=True, fill='x')
+        Button(speed_frame, text="Speed -", command=lambda: setattr(self, 'speed', VideoProcessor.slow_down(self.speed))).pack(side='left', expand=True, fill='x')
         self.update_status()
         # Frame shift side by side
         frame_frame = Frame(kb_btn_frame)
         frame_frame.pack(fill='x', pady=1)
-        Button(frame_frame, text="Prev Frame", command=self.prev_frame).pack(side='left', expand=True, fill='x')
-        Button(frame_frame, text="Next Frame", command=self.next_frame).pack(side='left', expand=True, fill='x')
+        Button(frame_frame, text="Prev Frame", command=lambda: VideoProcessor.prev_frame(self)).pack(side='left', expand=True, fill='x')
+        Button(frame_frame, text="Next Frame", command=lambda: VideoProcessor.next_frame(self)).pack(side='left', expand=True, fill='x')
         # Skip 5s side by side
         skip5s_frame = Frame(kb_btn_frame)
         skip5s_frame.pack(fill='x', pady=1)
-        Button(skip5s_frame, text="Skip -5s", command=self.skip_back_5s).pack(side='left', expand=True, fill='x')
-        Button(skip5s_frame, text="Skip +5s", command=self.skip_forward_5s).pack(side='left', expand=True, fill='x')
+        Button(skip5s_frame, text="Skip -5s", command=lambda: VideoProcessor.skip_back_5s(self)).pack(side='left', expand=True, fill='x')
+        Button(skip5s_frame, text="Skip +5s", command=lambda: VideoProcessor.skip_forward_5s(self)).pack(side='left', expand=True, fill='x')
         # Skip 5min side by side
         skip5min_frame = Frame(kb_btn_frame)
         skip5min_frame.pack(fill='x', pady=1)
-        Button(skip5min_frame, text="Skip -5min", command=self.skip_back_5min).pack(side='left', expand=True, fill='x')
-        Button(skip5min_frame, text="Skip +5min", command=self.skip_forward_5min).pack(side='left', expand=True, fill='x')
+        Button(skip5min_frame, text="Skip -5min", command=lambda: VideoProcessor.skip_back_5min(self)).pack(side='left', expand=True, fill='x')
+        Button(skip5min_frame, text="Skip +5min", command=lambda: VideoProcessor.skip_forward_5min(self)).pack(side='left', expand=True, fill='x')
         # Skip 1hr side by side
         skip1hr_frame = Frame(kb_btn_frame)
         skip1hr_frame.pack(fill='x', pady=1)
-        Button(skip1hr_frame, text="Skip -1hr", command=self.skip_back_1hr).pack(side='left', expand=True, fill='x')
-        Button(skip1hr_frame, text="Skip +1hr", command=self.skip_forward_1hr).pack(side='left', expand=True, fill='x')
+        Button(skip1hr_frame, text="Skip -1hr", command=lambda: VideoProcessor.skip_back_1hr(self)).pack(side='left', expand=True, fill='x')
+        Button(skip1hr_frame, text="Skip +1hr", command=lambda: VideoProcessor.skip_forward_1hr(self)).pack(side='left', expand=True, fill='x')
 
         # Log-related buttons (grouped) - move to bottom of controls_container
         log_btn_frame = Frame(controls_container)
@@ -117,17 +117,17 @@ class CarCounterGUI:
         self.root.resizable(False, False)
 
         # Keyboard shortcuts
-        self.root.bind('<space>', self.toggle_play)
-        self.root.bind('<KeyPress-equal>', self.speed_up)
-        self.root.bind('<KeyPress-minus>', self.slow_down)
-        self.root.bind('<comma>', self.prev_frame)
-        self.root.bind('<period>', self.next_frame)
-        self.root.bind('<semicolon>', self.skip_back_5s)
-        self.root.bind("'", self.skip_forward_5s)
-        self.root.bind('[', self.skip_back_5min)
-        self.root.bind(']', self.skip_forward_5min)
-        self.root.bind('{', self.skip_back_1hr)
-        self.root.bind('}', self.skip_forward_1hr)
+        self.root.bind('<space>', lambda e: VideoProcessor.toggle_play(self))
+        self.root.bind('<KeyPress-equal>', lambda e: setattr(self, 'speed', VideoProcessor.speed_up(self.speed)))
+        self.root.bind('<KeyPress-minus>', lambda e: setattr(self, 'speed', VideoProcessor.slow_down(self.speed)))
+        self.root.bind('<comma>', lambda e: VideoProcessor.prev_frame(self))
+        self.root.bind('<period>', lambda e: VideoProcessor.next_frame(self))
+        self.root.bind('<semicolon>', lambda e: VideoProcessor.skip_back_5s(self))
+        self.root.bind("'", lambda e: VideoProcessor.skip_forward_5s(self))
+        self.root.bind('[', lambda e: VideoProcessor.skip_back_5min(self))
+        self.root.bind(']', lambda e: VideoProcessor.skip_forward_5min(self))
+        self.root.bind('{', lambda e: VideoProcessor.skip_back_1hr(self))
+        self.root.bind('}', lambda e: VideoProcessor.skip_forward_1hr(self))
         self.root.bind('<BackSpace>', self.undo)
         self.root.bind('<Control-z>', self.restore_last_undo)  # Ctrl+Z for undo
         self.root.bind('<Control-y>', self.redo)  # Ctrl+Y for redo
@@ -209,6 +209,10 @@ class CarCounterGUI:
         self.root.quit()
 
 ## Video Functions ##########################################################
+    # All video-related methods are now handled by VideoProcessor static methods.
+    # The GUI calls VideoProcessor directly in event bindings and button commands.
+    # These stubs are no longer needed and can be removed.
+
     def open_video(self, event=None):
         path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov")])
         if path:

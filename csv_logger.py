@@ -84,6 +84,7 @@ class CSVLogger:
             try:
                 with open(self.filename, 'w') as f:
                     f.write("")
+                gui.update_log_display()
             except Exception:
                 pass
 

@@ -67,10 +67,10 @@ class CarCounterGUI:
         Button(kb_btn_frame, text="Play/Pause", command=lambda: VideoProcessor.toggle_play(self)).pack(side='top', pady=1, fill='x')
         speed_frame = Frame(kb_btn_frame)
         speed_frame.pack(fill='x', pady=1)
-        Button(speed_frame, text="Speed +", command=lambda: setattr(self, 'speed', VideoProcessor.speed_up(self.speed))).pack(side='left', expand=True, fill='x')
+        Button(speed_frame, text="Speed -", command=lambda: setattr(self, 'speed', VideoProcessor.slow_down(self.speed))).pack(side='left', expand=True, fill='x')
         self.status_label = Label(speed_frame, anchor='center', width=5)
         self.status_label.pack(side='left', padx=4, fill='x', expand=True)
-        Button(speed_frame, text="Speed -", command=lambda: setattr(self, 'speed', VideoProcessor.slow_down(self.speed))).pack(side='left', expand=True, fill='x')
+        Button(speed_frame, text="Speed +", command=lambda: setattr(self, 'speed', VideoProcessor.speed_up(self.speed))).pack(side='left', expand=True, fill='x')
         self.update_status()
         # Frame shift side by side
         frame_frame = Frame(kb_btn_frame)
@@ -93,7 +93,7 @@ class CarCounterGUI:
         Button(skip1hr_frame, text="Skip -1hr", command=lambda: VideoProcessor.skip_back_1hr(self)).pack(side='left', expand=True, fill='x')
         Button(skip1hr_frame, text="Skip +1hr", command=lambda: VideoProcessor.skip_forward_1hr(self)).pack(side='left', expand=True, fill='x')
 
-        # Log-related buttons (grouped) - move to bottom of controls_container
+        # Log-related buttons (grouped)
         log_btn_frame = Frame(controls_container)
         log_btn_frame.pack(side='bottom', pady=(16, 16), fill='x')
         self.export_btn = Button(log_btn_frame, text="Export Log", command=lambda: self.logger.export_log(self))

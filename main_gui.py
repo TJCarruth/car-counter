@@ -52,20 +52,12 @@ class CarCounterGUI:
         side_panel = Frame(main_frame)
         side_panel.pack(side=LEFT, fill=Y, padx=5, pady=10)
 
-        # Button row (vertical in side panel)
-        button_row = Frame(side_panel)
-        button_row.pack(fill='x', pady=(0, 10))
-        # Open video button
-        self.open_btn = Button(button_row, text="Open Video", command=self.open_video)
-        self.open_btn.pack(side='top', pady=2, fill='x')
-        # Export Log button
-        self.export_btn = Button(button_row, text="Export Log", command=self.export_log)
-        self.export_btn.pack(side='top', pady=2, fill='x')
-        # Clear Log button
-        self.clear_btn = Button(button_row, text="Clear Log", command=self.clear_log)
-        self.clear_btn.pack(side='top', pady=2, fill='x')
+        # --- Keybinding buttons regrouped ---
+        # Open Video at the very top
+        self.open_btn = Button(side_panel, text="Open Video", command=self.open_video)
+        self.open_btn.pack(side='top', pady=(0, 8), fill='x')
 
-        # --- Keybinding buttons row (grouped, above controls label) ---
+        # Video playback controls
         kb_btn_frame = Frame(side_panel)
         kb_btn_frame.pack(fill='x', pady=(0, 10))
         # Play/Pause (full width)
@@ -75,6 +67,10 @@ class CarCounterGUI:
         speed_frame.pack(fill='x', pady=1)
         Button(speed_frame, text="Speed +", command=self.speed_up).pack(side='left', expand=True, fill='x')
         Button(speed_frame, text="Speed -", command=self.slow_down).pack(side='left', expand=True, fill='x')
+        # Status label next to speed buttons
+        self.status_label = Label(speed_frame)
+        self.status_label.pack(side='left', padx=(8,0), fill='x')
+        self.update_status()
         # Frame shift side by side
         frame_frame = Frame(kb_btn_frame)
         frame_frame.pack(fill='x', pady=1)
@@ -95,18 +91,22 @@ class CarCounterGUI:
         skip1hr_frame.pack(fill='x', pady=1)
         Button(skip1hr_frame, text="Skip -1hr", command=self.skip_back_1hr).pack(side='left', expand=True, fill='x')
         Button(skip1hr_frame, text="Skip +1hr", command=self.skip_forward_1hr).pack(side='left', expand=True, fill='x')
+
+        # Log-related buttons (vertical, after video controls)
+        log_btn_frame = Frame(side_panel)
+        log_btn_frame.pack(fill='x', pady=(0, 10))
+        self.export_btn = Button(log_btn_frame, text="Export Log", command=self.export_log)
+        self.export_btn.pack(side='top', pady=2, fill='x')
+        self.clear_btn = Button(log_btn_frame, text="Clear Log", command=self.clear_log)
+        self.clear_btn.pack(side='top', pady=2, fill='x')
         # Undo/Redo side by side
-        undo_frame = Frame(kb_btn_frame)
+        undo_frame = Frame(log_btn_frame)
         undo_frame.pack(fill='x', pady=1)
         Button(undo_frame, text="Undo", command=self.undo).pack(side='left', expand=True, fill='x')
         Button(undo_frame, text="Redo", command=self.redo).pack(side='left', expand=True, fill='x')
-        # Quit (full width)
-        Button(kb_btn_frame, text="Quit", command=self.quit_app).pack(side='top', pady=1, fill='x')
 
-        # Status label at the bottom of side panel
-        self.status_label = Label(side_panel)
-        self.status_label.pack(side='bottom', pady=(10, 0), fill='x')
-        self.update_status()
+        # Quit button at the very bottom
+        Button(side_panel, text="Save and Quit", command=self.quit_app).pack(side='bottom', pady=8, fill='x')
 
         # Prevent window from resizing automatically to fit widgets
         self.root.update_idletasks()

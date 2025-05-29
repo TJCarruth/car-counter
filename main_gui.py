@@ -1,7 +1,7 @@
 import os
 import cv2
 import threading
-from tkinter import Tk, Button, Label, filedialog, StringVar, Frame, Text, Scrollbar, RIGHT, Y, LEFT, BOTH
+from tkinter import Tk, Button, Label, filedialog, StringVar, Frame, Text, Scrollbar, RIGHT, Y, LEFT, BOTH, simpledialog, messagebox
 from video_processor import VideoProcessor
 from csv_logger import CSVLogger
 from datetime import timedelta
@@ -25,31 +25,41 @@ class CarCounterGUI:
         main_frame = Frame(root)
         main_frame.pack(fill=BOTH, expand=True)
 
-        # Video frame display
-        self.frame_width = 640  # Set your desired default width
-        self.frame_height = 480  # Set your desired default height
-        black_img = Image.new('RGB', (self.frame_width, self.frame_height), color='black')
-        self.blank_imgtk = ImageTk.PhotoImage(image=black_img)
-        self.frame_label = Label(main_frame, image=self.blank_imgtk)
-        self.frame_label.imgtk = self.blank_imgtk  # Keep reference!
-        self.frame_label.pack(side=LEFT, padx=10, pady=10)
-
         # Log display
         log_frame = Frame(main_frame)
-        log_frame.pack(side=LEFT, fill=Y, padx=10, pady=10)
-        self.log_text = Text(log_frame, width=40, height=25, state='disabled')
+        log_frame.pack(side=RIGHT, fill=Y, padx=10, pady=10)
+        self.log_text = Text(log_frame, width=25, height=25, state='disabled')
         self.log_text.pack(side=LEFT, fill=Y)
         scrollbar = Scrollbar(log_frame, command=self.log_text.yview)
         scrollbar.pack(side=RIGHT, fill=Y)
         self.log_text['yscrollcommand'] = scrollbar.set
 
+        # Video frame display
+        self.frame_width = 640  # Default width
+        self.frame_height = 480  # Default height
+        black_img = Image.new('RGB', (self.frame_width, self.frame_height), color='black')
+        self.blank_imgtk = ImageTk.PhotoImage(image=black_img)
+        self.frame_label = Label(main_frame, image=self.blank_imgtk, bg='black')
+        self.frame_label.imgtk = self.blank_imgtk  # Keep reference!
+        self.frame_label.pack(side=LEFT, padx=10, pady=10)
+        # Remove dynamic resizing
+        # self.frame_label.bind('<Configure>', self.on_frame_resize)
+
         # Button row under video and log
         button_row = Frame(root)
         button_row.pack(fill='x', pady=(0, 10))
+        # Open video button
         self.open_btn = Button(button_row, text="Open Video", command=self.open_video)
         self.open_btn.pack(side='left', padx=10)
+        # Export Log button
+        self.export_btn = Button(button_row, text="Export Log", command=self.export_log)
+        self.export_btn.pack(side='right', padx=20)
+        # Clear Log button
+        self.clear_btn = Button(button_row, text="Clear Log", command=self.clear_log)
+        self.clear_btn.pack(side='right', padx=10)
 
-        # Controls label in the middle
+        # Controls label inbtween the buttons
+        self.controls_label = Label(button_row, text="", anchor='center')
         controls_text = (
             "Space=Play/Pause | +/-=Playbck Speed | , .=Frame Shift | ; '=Skip 5s | [ ]=Skip 5min | { }=Skip 1hr | "
             "Any letter=Log | Backspace=Undo | q=Quit"
@@ -57,13 +67,16 @@ class CarCounterGUI:
         self.controls_label = Label(button_row, text=controls_text, anchor='center')
         self.controls_label.pack(side='left', expand=True, fill='x')
 
-        self.export_btn = Button(button_row, text="Export Log", command=self.export_log)
-        self.export_btn.pack(side='right', padx=20)
-
         # Status label at the bottom
         self.status_label = Label(root)
         self.status_label.pack()
         self.update_status()
+
+        # Prevent window from resizing automatically to fit widgets
+        self.root.update_idletasks()
+        self.root.minsize(self.root.winfo_width(), self.root.winfo_height())
+        self.root.maxsize(self.root.winfo_width(), self.root.winfo_height())
+        self.root.resizable(False, False)
 
         # Keyboard shortcuts
         self.root.bind('<space>', self.toggle_play)
@@ -94,6 +107,23 @@ class CarCounterGUI:
             self.status.set(f"Loaded: {os.path.basename(path)}")
             self.paused = True
             self.frame_pos = 0
+            # Do NOT call self.root.geometry or change window size here
+            self.show_frame()
+            self.update_log_display()
+            # --- Start time logic (from main.py) ---
+            video_basename = os.path.splitext(os.path.basename(path))[0]
+            default_start_time = VideoProcessor.extract_default_start_time(video_basename)
+            prompt = "Enter the video start time (HH:MM:SS)"
+            if default_start_time:
+                prompt += f" [default: {default_start_time}]"
+            prompt += ":"
+            # Use simpledialog to prompt user
+            start_time_str = simpledialog.askstring("Start Time", prompt, initialvalue=default_start_time or "00:00:00", parent=self.root)
+            if not start_time_str and default_start_time:
+                start_time_str = default_start_time
+            offset = VideoProcessor.parse_start_time(start_time_str) if start_time_str else None
+            self.start_offset = offset if offset is not None else timedelta()
+            # --- End start time logic ---
             self.show_frame()  # Show first frame
             self.update_log_display()
 
@@ -142,19 +172,17 @@ class CarCounterGUI:
         if self.video and frame is None:
             ret, frame = self.video.read()
             if not ret:
-                # If no frame, show black
                 self.frame_label.config(image=self.blank_imgtk)
                 self.frame_label.imgtk = self.blank_imgtk
                 return
         if frame is not None:
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame_rgb)
-            img = img.resize((self.frame_width, self.frame_height))
+            img = img.resize((self.frame_width, self.frame_height), Image.LANCZOS)
             imgtk = ImageTk.PhotoImage(image=img)
-            self.frame_label.imgtk = imgtk  # Keep reference!
+            self.frame_label.imgtk = imgtk
             self.frame_label.config(image=imgtk)
         else:
-            # If no frame, show black
             self.frame_label.config(image=self.blank_imgtk)
             self.frame_label.imgtk = self.blank_imgtk
 
@@ -252,6 +280,21 @@ class CarCounterGUI:
                 self.status.set(f"Log exported to {os.path.basename(export_path)}")
             except Exception as e:
                 self.status.set(f"Export failed: {e}")
+
+    def clear_log(self):
+        if not self.logger:
+            self.status.set("No log to clear.")
+            return
+        confirm = messagebox.askyesno("Clear Log", "Are you sure you want to clear the log? This cannot be undone.")
+        if confirm:
+            # Overwrite the log file with nothing
+            try:
+                with open(self.logger.filename, 'w') as f:
+                    f.write("")
+                self.status.set("Log cleared.")
+                self.update_log_display()
+            except Exception as e:
+                self.status.set(f"Failed to clear log: {e}")
 
     def update_log_display(self):
         if self.logger:

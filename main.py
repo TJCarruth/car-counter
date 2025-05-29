@@ -34,60 +34,60 @@ def main():
                     The video will start paused. When ready, press 's' to enter the start time (HH:MM:SS).
                     """
     print(controls_text)
+    start_time_set = False
 
-    ## Determine the start time ##########################################################
+    slider_max = int(video.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
+    slider_pos = 0
+    user_slider_drag = [False]
+    slider_target_frame = [0]
 
-    # Extract last 6 digits from video name (before extension) to use as default start time if available.
-    # If the video name is something like "video_000003.mp4", it will use "00:00:03" as the default start time.
-    video_basename = os.path.splitext(selected_video)[0]
-    default_start_time = VideoProcessor.extract_default_start_time(video_basename)
+    def on_trackbar(val):
+        user_slider_drag[0] = True
+        slider_target_frame[0] = val
 
-    # Prompts the user for the start time, but offers a default based on the video name.
+    cv2.namedWindow("Video", cv2.WINDOW_NORMAL)
+    cv2.createTrackbar("Position", "Video", 0, slider_max, on_trackbar)
+
     while True:
-        prompt = f"Enter the video start time (HH:MM:SS)"
-        if default_start_time:
-            prompt += f" [default: {default_start_time}]: "
-        else:
-            prompt += ": "
-        start_time_str = input(prompt)
+        # If user dragged the slider, show the frame at that position and pause
+        if user_slider_drag[0]:
+            frame_pos = slider_target_frame[0]
+            video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
+            ret, frame = video.read()
+            if ret:
+                cv2.setWindowProperty("Video", cv2.WND_PROP_TOPMOST, 1)
+                cv2.setTrackbarPos("Position", "Video", frame_pos)
+                cv2.imshow("Video", frame)
+            paused = True
+            user_slider_drag[0] = False
+            continue
 
-        if not start_time_str and default_start_time:
-            start_time_str = default_start_time
-        offset = VideoProcessor.parse_start_time(start_time_str)
-        
-        if offset is not None:
-            start_offset = offset
-            print(f"Start time set to {start_time_str}.")
-            break
-
-    ## Video Playback Loop ##########################################################
-    while True:
-
-        # controls the playing and pausing of the video
         if not paused:
             ret, frame = video.read()
             if not ret:
                 print("End of video.") # If we reach the end of the video, we stop playback
                 break
             frame_pos = int(video.get(cv2.CAP_PROP_POS_FRAMES))
-        else:
-            video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
-            ret, frame = video.read()
-        # Keep the video window on top so we can interact with the terminal at the same time.
-        if ret:
-            cv2.namedWindow("Video", cv2.WINDOW_NORMAL)
             cv2.setWindowProperty("Video", cv2.WND_PROP_TOPMOST, 1)
+            cv2.setTrackbarPos("Position", "Video", frame_pos)
             cv2.imshow("Video", frame)
         else:
-            print("Error: Couldn't retrieve frame.")
-            break
+            if int(video.get(cv2.CAP_PROP_POS_FRAMES)) != frame_pos:
+                video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
+            ret, frame = video.read()
+            if ret:
+                cv2.setWindowProperty("Video", cv2.WND_PROP_TOPMOST, 1)
+                cv2.setTrackbarPos("Position", "Video", frame_pos)
+                cv2.imshow("Video", frame)
+                video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
 
-        
+        # Check if slider was moved
+        new_slider_pos = cv2.getTrackbarPos("Position", "Video")
+        if new_slider_pos != frame_pos:
+            frame_pos = new_slider_pos
+            video.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
+            paused = True
 
-        # Video Controls #############################################################################
-
-        # watches for key presses. The delay controls the speed of the video playback.
-        # If paused, waits indefinitely for a key press; otherwise, adjust delay based on speed.
         key = cv2.waitKey(0 if paused else int(30 / speed)) & 0xFF
 
         ## General Controls ##########################################################

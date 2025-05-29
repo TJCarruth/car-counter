@@ -48,31 +48,41 @@ class CarCounterGUI:
         # Remove dynamic resizing
         # self.frame_label.bind('<Configure>', self.on_frame_resize)
 
-        # Button row under video and log
-        button_row = Frame(root)
+        # --- Side panel between video and log ---
+        side_panel = Frame(main_frame)
+        side_panel.pack(side=LEFT, fill=Y, padx=5, pady=10)
+
+        # Button row (vertical in side panel)
+        button_row = Frame(side_panel)
         button_row.pack(fill='x', pady=(0, 10))
         # Open video button
         self.open_btn = Button(button_row, text="Open Video", command=self.open_video)
-        self.open_btn.pack(side='left', padx=10)
+        self.open_btn.pack(side='top', pady=2, fill='x')
         # Export Log button
         self.export_btn = Button(button_row, text="Export Log", command=self.export_log)
-        self.export_btn.pack(side='right', padx=20)
+        self.export_btn.pack(side='top', pady=2, fill='x')
         # Clear Log button
         self.clear_btn = Button(button_row, text="Clear Log", command=self.clear_log)
-        self.clear_btn.pack(side='right', padx=10)
+        self.clear_btn.pack(side='top', pady=2, fill='x')
 
-        # Controls label inbtween the buttons
-        self.controls_label = Label(button_row, text="", anchor='center')
+        # Controls label below buttons
         controls_text = (
-            "Space=Play/Pause | +/-=Playbck Speed | , .=Frame Shift | ; '=Skip 5s | [ ]=Skip 5min | { }=Skip 1hr | "
-            "Any letter=Log | Backspace=Undo | q=Quit"
+            "Space = Play/Pause\n"
+            "+ / - = Playback Speed\n"
+            ", / . = Frame Shift\n"
+            "; / ' = Skip 5s\n"
+            "[ / ] = Skip 5min\n"
+            "{ / } = Skip 1hr\n"
+            "Any letter = Log\n"
+            "Backspace = Undo\n"
+            "q = Quit"
         )
-        self.controls_label = Label(button_row, text=controls_text, anchor='center')
-        self.controls_label.pack(side='left', expand=True, fill='x')
+        self.controls_label = Label(side_panel, text=controls_text, anchor='center', wraplength=200, justify='left')
+        self.controls_label.pack(fill='x', pady=(10, 10))
 
-        # Status label at the bottom
-        self.status_label = Label(root)
-        self.status_label.pack()
+        # Status label at the bottom of side panel
+        self.status_label = Label(side_panel)
+        self.status_label.pack(side='bottom', pady=(10, 0), fill='x')
         self.update_status()
 
         # Prevent window from resizing automatically to fit widgets
@@ -97,6 +107,7 @@ class CarCounterGUI:
         self.root.bind('<Control-z>', self.undo)  # Ctrl+Z for undo
         self.root.bind('<Control-y>', self.redo)  # Ctrl+Y for redo
         self.log_text.bind('<Button-1>', self.on_log_click)
+        self.root.bind('q', self.quit_app)  # Quit key binding
         # Bind all alphabet keys to log_key_event
         for char in 'abcdefghijklmnopqrstuvwxyz':
             self.root.bind(f'<KeyPress-{char}>', self.log_key_event)
@@ -487,6 +498,9 @@ class CarCounterGUI:
         except Exception:
             highlight_line = None
         self.update_log_display(highlight_line=highlight_line)
+
+    def quit_app(self, event=None):
+        self.root.quit()
 
 if __name__ == "__main__":
     root = Tk()

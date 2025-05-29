@@ -138,6 +138,77 @@ class CarCounterGUI:
             self.root.bind(f'<KeyPress-{char}>', self.log_key_event)
             self.root.bind(f'<KeyPress-{char.upper()}>', self.log_key_event)
 
+## GUI Functions ##########################################################
+
+    def update_log_display(self, highlight_line=None):
+        if self.logger:
+            try:
+                with open(self.logger.filename, 'r') as f:
+                    log_content = f.read()
+            except Exception:
+                log_content = "No log file found."
+        else:
+            log_content = "No log file found."
+        self.log_text.config(state='normal')
+        self.log_text.delete(1.0, 'end')
+        self.log_text.insert('end', log_content)
+        lines = log_content.splitlines()
+        if lines:
+            if highlight_line is None:
+                highlight_line = len(lines)
+            # Remove previous highlight
+            self.log_text.tag_remove('highlight', '1.0', 'end')
+            # Highlight the specified entry
+            self.log_text.tag_add('highlight', f'{highlight_line}.0', f'{highlight_line}.end')
+            self.log_text.tag_configure('highlight', background='yellow')
+            # Center the display around the highlighted entry
+            self.log_text.see(f'{highlight_line}.0')
+        self.log_text.config(state='disabled')
+
+    def on_log_click(self, event):
+        # Remove previous highlight
+        self.log_text.tag_remove('highlight', '1.0', 'end')
+        # Get the line number clicked
+        index = self.log_text.index(f'@{event.x},{event.y}')
+        line_number = int(index.split('.')[0])
+        # Highlight the clicked line
+        self.log_text.tag_add('highlight', f'{line_number}.0', f'{line_number}.end')
+        self.log_text.tag_configure('highlight', background='yellow')
+        # Get the line content
+        line_content = self.log_text.get(f'{line_number}.0', f'{line_number}.end').strip()
+        # Try to extract the timestamp (assumes format: timestamp, key)
+        if ',' in line_content:
+            timestamp_str = line_content.split(',')[0].strip()
+        elif ':' in line_content:
+            # If format is key, timestamp
+            timestamp_str = line_content.split(':', 1)[1].strip()
+        else:
+            return
+        # Parse the timestamp (expects HH:MM:SS:ms or HH:MM:SS)
+        try:
+            parts = timestamp_str.split(':')
+            if len(parts) >= 3:
+                hours = int(parts[0])
+                minutes = int(parts[1])
+                seconds = int(parts[2])
+                ms = int(parts[3]) if len(parts) > 3 else 0
+                total_seconds = hours * 3600 + minutes * 60 + seconds + ms / 1000.0
+                # Subtract offset
+                offset_seconds = self.start_offset.total_seconds() if self.start_offset else 0
+                video_seconds = max(0, total_seconds - offset_seconds)
+                if self.video:
+                    fps = self.video.get(cv2.CAP_PROP_FPS)
+                    frame = int(video_seconds * fps)
+                    self.video.set(cv2.CAP_PROP_POS_FRAMES, frame)
+                    self.paused = True
+                    self.show_frame()
+        except Exception:
+            pass
+
+    def quit_app(self, event=None):
+        self.root.quit()
+
+## Video Functions ##########################################################
     def open_video(self, event=None):
         path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov")])
         if path:
@@ -182,6 +253,100 @@ class CarCounterGUI:
             self.show_frame(frame)
             delay = int(30 / self.speed)
             self.root.after(delay, self.play_video)
+
+    def show_frame(self, frame=None):
+        if self.video and frame is None:
+            ret, frame = self.video.read()
+            if not ret:
+                self.frame_label.config(image=self.blank_imgtk)
+                self.frame_label.imgtk = self.blank_imgtk
+                return
+        if frame is not None:
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame_rgb)
+            img = img.resize((self.frame_width, self.frame_height), Image.LANCZOS)
+            imgtk = ImageTk.PhotoImage(image=img)
+            self.frame_label.imgtk = imgtk
+            self.frame_label.config(image=imgtk)
+        else:
+            self.frame_label.config(image=self.blank_imgtk)
+            self.frame_label.imgtk = self.blank_imgtk
+
+    def speed_up(self, event=None):
+        self.speed = min(self.speed + 0.25, 10)
+
+    def slow_down(self, event=None):
+        self.speed = max(self.speed - 0.25, 0.25)
+
+    def prev_frame(self, event=None):
+        if self.video:
+            self.video.set(cv2.CAP_PROP_POS_FRAMES, max(0, self.video.get(cv2.CAP_PROP_POS_FRAMES) - 1))
+            self.paused = True
+            self.show_frame()
+
+    def next_frame(self, event=None):
+        if self.video:
+            frame_count = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.video.set(cv2.CAP_PROP_POS_FRAMES, min(frame_count - 1, self.video.get(cv2.CAP_PROP_POS_FRAMES) + 1))
+            self.paused = True
+            self.show_frame()
+
+    def skip_back_5s(self, event=None):
+        if self.video:
+            vp = self.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 5))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            self.show_frame()
+
+    def skip_forward_5s(self, event=None):
+        if self.video:
+            vp = self.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
+            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 5))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            self.show_frame()
+
+    def skip_back_5min(self, event=None):
+        if self.video:
+            vp = self.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 60 * 5))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            self.show_frame()
+
+    def skip_forward_5min(self, event=None):
+        if self.video:
+            vp = self.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
+            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 60 * 5))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            self.show_frame()
+
+    def skip_back_1hr(self, event=None):
+        if self.video:
+            vp = self.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 60 * 60))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            self.show_frame()
+
+    def skip_forward_1hr(self, event=None):
+        if self.video:
+            vp = self.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
+            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 60 * 60))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            self.show_frame()
+
+    def update_status(self):
+        self.status_label.config(text=f"{self.speed}x")
+        self.root.after(200, self.update_status)
+
+## Log Functions ##########################################################
 
     def log_event(self, event=None):
         if not self.logger or not self.video:
@@ -280,94 +445,6 @@ class CarCounterGUI:
             except Exception:
                 pass
 
-    def show_frame(self, frame=None):
-        if self.video and frame is None:
-            ret, frame = self.video.read()
-            if not ret:
-                self.frame_label.config(image=self.blank_imgtk)
-                self.frame_label.imgtk = self.blank_imgtk
-                return
-        if frame is not None:
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            img = Image.fromarray(frame_rgb)
-            img = img.resize((self.frame_width, self.frame_height), Image.LANCZOS)
-            imgtk = ImageTk.PhotoImage(image=img)
-            self.frame_label.imgtk = imgtk
-            self.frame_label.config(image=imgtk)
-        else:
-            self.frame_label.config(image=self.blank_imgtk)
-            self.frame_label.imgtk = self.blank_imgtk
-
-    def speed_up(self, event=None):
-        self.speed = min(self.speed + 0.25, 10)
-
-    def slow_down(self, event=None):
-        self.speed = max(self.speed - 0.25, 0.25)
-
-    def prev_frame(self, event=None):
-        if self.video:
-            self.video.set(cv2.CAP_PROP_POS_FRAMES, max(0, self.video.get(cv2.CAP_PROP_POS_FRAMES) - 1))
-            self.paused = True
-            self.show_frame()
-
-    def next_frame(self, event=None):
-        if self.video:
-            frame_count = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.video.set(cv2.CAP_PROP_POS_FRAMES, min(frame_count - 1, self.video.get(cv2.CAP_PROP_POS_FRAMES) + 1))
-            self.paused = True
-            self.show_frame()
-
-    def skip_back_5s(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 5))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
-
-    def skip_forward_5s(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
-            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 5))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
-
-    def skip_back_5min(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 60 * 5))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
-
-    def skip_forward_5min(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
-            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 60 * 5))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
-
-    def skip_back_1hr(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 60 * 60))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
-
-    def skip_forward_1hr(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
-            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 60 * 60))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
-
     def export_log(self):
         if not self.logger:
             return
@@ -401,75 +478,6 @@ class CarCounterGUI:
                 self.update_log_display()
             except Exception as e:
                 pass
-
-    def update_log_display(self, highlight_line=None):
-        if self.logger:
-            try:
-                with open(self.logger.filename, 'r') as f:
-                    log_content = f.read()
-            except Exception:
-                log_content = "No log file found."
-        else:
-            log_content = "No log file found."
-        self.log_text.config(state='normal')
-        self.log_text.delete(1.0, 'end')
-        self.log_text.insert('end', log_content)
-        lines = log_content.splitlines()
-        if lines:
-            if highlight_line is None:
-                highlight_line = len(lines)
-            # Remove previous highlight
-            self.log_text.tag_remove('highlight', '1.0', 'end')
-            # Highlight the specified entry
-            self.log_text.tag_add('highlight', f'{highlight_line}.0', f'{highlight_line}.end')
-            self.log_text.tag_configure('highlight', background='yellow')
-            # Center the display around the highlighted entry
-            self.log_text.see(f'{highlight_line}.0')
-        self.log_text.config(state='disabled')
-
-    def update_status(self):
-        self.status_label.config(text=f"{self.speed}x")
-        self.root.after(200, self.update_status)
-
-    def on_log_click(self, event):
-        # Remove previous highlight
-        self.log_text.tag_remove('highlight', '1.0', 'end')
-        # Get the line number clicked
-        index = self.log_text.index(f'@{event.x},{event.y}')
-        line_number = int(index.split('.')[0])
-        # Highlight the clicked line
-        self.log_text.tag_add('highlight', f'{line_number}.0', f'{line_number}.end')
-        self.log_text.tag_configure('highlight', background='yellow')
-        # Get the line content
-        line_content = self.log_text.get(f'{line_number}.0', f'{line_number}.end').strip()
-        # Try to extract the timestamp (assumes format: timestamp, key)
-        if ',' in line_content:
-            timestamp_str = line_content.split(',')[0].strip()
-        elif ':' in line_content:
-            # If format is key, timestamp
-            timestamp_str = line_content.split(':', 1)[1].strip()
-        else:
-            return
-        # Parse the timestamp (expects HH:MM:SS:ms or HH:MM:SS)
-        try:
-            parts = timestamp_str.split(':')
-            if len(parts) >= 3:
-                hours = int(parts[0])
-                minutes = int(parts[1])
-                seconds = int(parts[2])
-                ms = int(parts[3]) if len(parts) > 3 else 0
-                total_seconds = hours * 3600 + minutes * 60 + seconds + ms / 1000.0
-                # Subtract offset
-                offset_seconds = self.start_offset.total_seconds() if self.start_offset else 0
-                video_seconds = max(0, total_seconds - offset_seconds)
-                if self.video:
-                    fps = self.video.get(cv2.CAP_PROP_FPS)
-                    frame = int(video_seconds * fps)
-                    self.video.set(cv2.CAP_PROP_POS_FRAMES, frame)
-                    self.paused = True
-                    self.show_frame()
-        except Exception:
-            pass
 
     def sort_log_file(self):
         if not self.logger:
@@ -523,8 +531,7 @@ class CarCounterGUI:
             highlight_line = None
         self.update_log_display(highlight_line=highlight_line)
 
-    def quit_app(self, event=None):
-        self.root.quit()
+
 
 if __name__ == "__main__":
     root = Tk()

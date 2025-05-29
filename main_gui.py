@@ -317,9 +317,14 @@ class CarCounterGUI:
         self.root.after(200, self.update_status)
 
     def on_log_click(self, event):
+        # Remove previous highlight
+        self.log_text.tag_remove('highlight', '1.0', 'end')
         # Get the line number clicked
         index = self.log_text.index(f'@{event.x},{event.y}')
         line_number = int(index.split('.')[0])
+        # Highlight the clicked line
+        self.log_text.tag_add('highlight', f'{line_number}.0', f'{line_number}.end')
+        self.log_text.tag_configure('highlight', background='yellow')
         # Get the line content
         line_content = self.log_text.get(f'{line_number}.0', f'{line_number}.end').strip()
         # Try to extract the timestamp (assumes format: timestamp, key)

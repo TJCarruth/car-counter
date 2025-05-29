@@ -46,12 +46,18 @@ class VideoProcessor:
             gui.frame_label.imgtk = gui.blank_imgtk
 
     @staticmethod
-    def speed_up(speed):
-        return min(speed + 0.25, 10)
+    def speed_up(gui):
+        gui.speed = min(gui.speed + 0.25, 10)
+        if hasattr(gui, 'status_label'):
+            gui.status_label.config(text=f"{gui.speed}x")
+        return gui.speed
 
     @staticmethod
-    def slow_down(speed):
-        return max(speed - 0.25, 0.25)
+    def slow_down(gui):
+        gui.speed = max(gui.speed - 0.25, 0.25)
+        if hasattr(gui, 'status_label'):
+            gui.status_label.config(text=f"{gui.speed}x")
+        return gui.speed
 
     @staticmethod
     def prev_frame(gui):

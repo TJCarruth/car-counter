@@ -67,10 +67,10 @@ class CarCounterGUI:
         Button(kb_btn_frame, text="Play/Pause", command=lambda: VideoProcessor.toggle_play(self)).pack(side='top', pady=1, fill='x')
         speed_frame = Frame(kb_btn_frame)
         speed_frame.pack(fill='x', pady=1)
-        Button(speed_frame, text="Speed -", command=lambda: setattr(self, 'speed', VideoProcessor.slow_down(self.speed))).pack(side='left', expand=True, fill='x')
+        Button(speed_frame, text="Speed -", command=lambda: VideoProcessor.slow_down(self)).pack(side='left', expand=True, fill='x')
         self.status_label = Label(speed_frame, anchor='center', width=5)
         self.status_label.pack(side='left', padx=4, fill='x', expand=True)
-        Button(speed_frame, text="Speed +", command=lambda: setattr(self, 'speed', VideoProcessor.speed_up(self.speed))).pack(side='left', expand=True, fill='x')
+        Button(speed_frame, text="Speed +", command=lambda: VideoProcessor.speed_up(self)).pack(side='left', expand=True, fill='x')
         self.update_status()
         # Frame shift side by side
         frame_frame = Frame(kb_btn_frame)
@@ -118,8 +118,8 @@ class CarCounterGUI:
 
         # Keyboard shortcuts
         self.root.bind('<space>', lambda e: VideoProcessor.toggle_play(self))
-        self.root.bind('<KeyPress-equal>', lambda e: setattr(self, 'speed', VideoProcessor.speed_up(self.speed)))
-        self.root.bind('<KeyPress-minus>', lambda e: setattr(self, 'speed', VideoProcessor.slow_down(self.speed)))
+        self.root.bind('<KeyPress-equal>', lambda e: VideoProcessor.speed_up(self))
+        self.root.bind('<KeyPress-minus>', lambda e: VideoProcessor.slow_down(self))
         self.root.bind('<comma>', lambda e: VideoProcessor.prev_frame(self))
         self.root.bind('<period>', lambda e: VideoProcessor.next_frame(self))
         self.root.bind('<semicolon>', lambda e: VideoProcessor.skip_back_5s(self))

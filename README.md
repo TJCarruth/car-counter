@@ -41,7 +41,7 @@ A Python application for playing back camera footage and logging car counts via 
    - Backspace = Undo & Pause
    - Ctrl+Z = Undo
    - Ctrl+Y = Redo
-   - q = Quit
+   - escape = Quit
 5. Press any other key to log an event and its timestamp in the video.
 6. After the session, check the generated CSV file in the output folder for your log data.
 7. Use the data analysis language of your choice to interpret the recorded key presses.

@@ -96,18 +96,18 @@ class CarCounterGUI:
         # Log-related buttons (grouped) - move to bottom of controls_container
         log_btn_frame = Frame(controls_container)
         log_btn_frame.pack(side='bottom', pady=(16, 16), fill='x')
-        self.export_btn = Button(log_btn_frame, text="Export Log", command=self.export_log)
+        self.export_btn = Button(log_btn_frame, text="Export Log", command=lambda: self.logger.export_log(self))
         self.export_btn.pack(side='top', pady=2, fill='x')
-        self.clear_btn = Button(log_btn_frame, text="Clear Log", command=self.clear_log)
+        self.clear_btn = Button(log_btn_frame, text="Clear Log", command=lambda: self.logger.clear_log(self))
         self.clear_btn.pack(side='top', pady=2, fill='x')
         undo_frame = Frame(log_btn_frame)
         undo_frame.pack(fill='x', pady=1)
-        Button(undo_frame, text="Undo", command=self.restore_last_undo).pack(side='left', expand=True, fill='x')
-        Button(undo_frame, text="Redo", command=self.redo).pack(side='left', expand=True, fill='x')
-        Button(log_btn_frame, text="Delete Entry", command=self.undo).pack(side='top', pady=2, fill='x')
+        Button(undo_frame, text="Undo", command=lambda: self.logger.restore_last_undo(self)).pack(side='left', expand=True, fill='x')
+        Button(undo_frame, text="Redo", command=lambda: self.logger.redo(self)).pack(side='left', expand=True, fill='x')
+        Button(log_btn_frame, text="Delete Entry", command=lambda: self.logger.undo(self)).pack(side='top', pady=2, fill='x')
 
         # Quit button at the very bottom, spaced from above
-        Button(side_panel, text="Save and Quit", command=self.quit_app).pack(side='bottom', pady=16, fill='x')
+        Button(side_panel, text="Save and Quit", command=self.root.quit).pack(side='bottom', pady=16, fill='x')
 
         # Prevent window from resizing automatically to fit widgets
         # Had issues with the window continuously resizing
@@ -128,11 +128,11 @@ class CarCounterGUI:
         self.root.bind(']', lambda e: VideoProcessor.skip_forward_5min(self))
         self.root.bind('{', lambda e: VideoProcessor.skip_back_1hr(self))
         self.root.bind('}', lambda e: VideoProcessor.skip_forward_1hr(self))
-        self.root.bind('<BackSpace>', self.undo)
-        self.root.bind('<Control-z>', self.restore_last_undo)  # Ctrl+Z for undo
-        self.root.bind('<Control-y>', self.redo)  # Ctrl+Y for redo
+        self.root.bind('<BackSpace>', lambda e: self.logger.undo(self))
+        self.root.bind('<Control-z>', lambda e: self.logger.restore_last_undo(self))  # Ctrl+Z for undo
+        self.root.bind('<Control-y>', lambda e: self.logger.redo(self))  # Ctrl+Y for redo
         self.log_text.bind('<Button-1>', self.on_log_click)
-        self.root.bind('q', self.quit_app)  # Quit key binding
+        self.root.bind('<Escape>', lambda e: self.root.quit())  # Escape key to quit
         # Bind all alphabet keys to log_key_event
         for char in 'abcdefghijklmnopqrstuvwxyz':
             self.root.bind(f'<KeyPress-{char}>', self.log_key_event)
@@ -235,174 +235,6 @@ class CarCounterGUI:
         except Exception:
             pass
 
-    def quit_app(self, event=None):
-        self.root.quit()
-
-
-    
-
-    
-
-## Log Functions ##########################################################
-
-    def log_event(self, event=None):
-        if not self.logger or not self.video:
-            return
-        frame_idx = int(self.video.get(cv2.CAP_PROP_POS_FRAMES))
-        fps = self.video.get(cv2.CAP_PROP_FPS)
-        seconds = frame_idx / fps if fps > 0 else 0
-        ms = seconds * 1000
-        timestamp_str = VideoProcessor.format_timestamp(ms, self.start_offset)
-        self.logger.log_entry("event", timestamp_str)
-        self.sort_log_file()
-        self.update_log_display()
-
-    def undo(self, event=None):
-        if self.logger:
-            highlight_next = None
-            try:
-                ranges = self.log_text.tag_ranges('highlight')
-                if ranges:
-                    start = ranges[0]
-                    line_number = int(str(start).split('.')[0])
-                    with open(self.logger.filename, 'r') as f:
-                        lines = [line for line in f if line.strip()]
-                    if 1 <= line_number <= len(lines):
-                        removed_entry = lines[line_number - 1]
-                        removed_index = line_number - 1
-                        self.undo_stack.append((removed_entry, removed_index))
-                        self.redo_stack.clear()
-                        del lines[line_number - 1]
-                        with open(self.logger.filename, 'w') as f:
-                            f.writelines(lines)
-                        self.sort_log_file()
-                        if line_number > 1:
-                            highlight_next = line_number - 1
-                        elif lines:
-                            highlight_next = 1
-                        else:
-                            highlight_next = None
-                else:
-                    with open(self.logger.filename, 'r') as f:
-                        lines = [line for line in f if line.strip()]
-                    if lines:
-                        removed_entry = lines[-1]
-                        removed_index = len(lines) - 1
-                        self.undo_stack.append((removed_entry, removed_index))
-                        self.redo_stack.clear()
-                    self.logger.undo_last_entry()
-                    self.sort_log_file()
-            except Exception:
-                pass
-            self.paused = True
-            self.update_log_display(highlight_line=highlight_next)
-
-    def restore_last_undo(self):
-        if self.logger and self.undo_stack:
-            try:
-                entry, index = self.undo_stack.pop()
-                with open(self.logger.filename, 'r') as f:
-                    lines = [line for line in f if line.strip()]
-                insert_at = min(index, len(lines))
-                lines.insert(insert_at, entry)
-                with open(self.logger.filename, 'w') as f:
-                    f.writelines(lines)
-                self.sort_log_file()
-                # Find the new line number of the restored entry
-                with open(self.logger.filename, 'r') as f:
-                    sorted_lines = [line for line in f if line.strip()]
-                highlight_line = None
-                for idx, line in enumerate(sorted_lines, 1):
-                    if line.strip() == entry.strip():
-                        highlight_line = idx
-                        break
-                self.redo_stack.append((entry, index))
-                self.update_log_display(highlight_line=highlight_line)
-            except Exception:
-                pass
-
-    def redo(self):
-        if self.logger and self.redo_stack:
-            try:
-                entry, index = self.redo_stack.pop()
-                with open(self.logger.filename, 'r') as f:
-                    lines = [line for line in f if line.strip()]
-                # Remove the entry at the same index (if it exists)
-                for i, line in enumerate(lines):
-                    if line.strip() == entry.strip():
-                        del lines[i]
-                        break
-                with open(self.logger.filename, 'w') as f:
-                    f.writelines(lines)
-                self.sort_log_file()
-                self.undo_stack.append((entry, index))
-                # Highlight the next entry above
-                highlight_line = index if index > 0 else 1
-                self.update_log_display(highlight_line=highlight_line)
-            except Exception:
-                pass
-
-    def export_log(self):
-        if not self.logger:
-            return
-        # Suggest a default name based on the video title
-        if self.video_path:
-            base = os.path.splitext(os.path.basename(self.video_path))[0]
-            suggested_name = base + ".csv"
-        else:
-            suggested_name = "log.csv"
-        export_path = filedialog.asksaveasfilename(
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv")],
-            initialfile=suggested_name
-        )
-        if export_path:
-            try:
-                with open(self.logger.filename, 'r') as src, open(export_path, 'w') as dst:
-                    dst.write(src.read())
-            except Exception as e:
-                pass
-
-    def clear_log(self):
-        if not self.logger:
-            return
-        confirm = messagebox.askyesno("Clear Log", "Are you sure you want to clear the log? This cannot be undone.")
-        if confirm:
-            # Overwrite the log file with nothing
-            try:
-                with open(self.logger.filename, 'w') as f:
-                    f.write("")
-                self.update_log_display()
-            except Exception as e:
-                pass
-
-    def sort_log_file(self):
-        if not self.logger:
-            return
-        import re
-        try:
-            with open(self.logger.filename, 'r') as f:
-                lines = [line for line in f if line.strip()]
-            def parse_ts(line):
-                if ',' in line:
-                    ts = line.split(',')[0].strip()
-                elif ':' in line:
-                    ts = line.split(':', 1)[1].strip()
-                else:
-                    return float('inf')
-                parts = re.split(r'[:]', ts)
-                try:
-                    h, m, s = int(parts[0]), int(parts[1]), int(parts[2])
-                    ms = int(parts[3]) if len(parts) > 3 else 0
-                    return h * 3600 + m * 60 + s + ms / 1000.0
-                except Exception:
-                    return float('inf')
-            lines.sort(key=parse_ts)
-            with open(self.logger.filename, 'w') as f:
-                f.writelines(lines)
-        except Exception:
-            pass
-
     def log_key_event(self, event):
         key = event.char
         if not key.isalpha():
@@ -413,7 +245,7 @@ class CarCounterGUI:
         ms = seconds * 1000
         timestamp_str = VideoProcessor.format_timestamp(ms, self.start_offset)
         self.logger.log_entry(key, timestamp_str)
-        self.sort_log_file()
+        self.logger.sort_log_file()
         # Find the line number of the just-logged event (match both timestamp and key)
         highlight_line = None
         try:

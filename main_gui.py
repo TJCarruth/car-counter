@@ -67,6 +67,7 @@ class CarCounterGUI:
 
         # Controls label below buttons
         controls_text = (
+            "Keybindings\n"
             "Space = Play/Pause\n"
             "+ / - = Playback Speed\n"
             ", / . = Frame Shift\n"
@@ -75,6 +76,8 @@ class CarCounterGUI:
             "{ / } = Skip 1hr\n"
             "Any letter = Log\n"
             "Backspace = Undo\n"
+            "Ctrl+Z = Undo\n"
+            "Ctrl+Y = Redo\n"
             "q = Quit"
         )
         self.controls_label = Label(side_panel, text=controls_text, anchor='center', wraplength=200, justify='left')

@@ -155,7 +155,7 @@ class CarCounterGUI:
 
     def undo(self, event=None):
         if self.logger:
-            # Get the currently highlighted line
+            highlight_next = None
             try:
                 ranges = self.log_text.tag_ranges('highlight')
                 if ranges:
@@ -170,6 +170,13 @@ class CarCounterGUI:
                         with open(self.logger.filename, 'w') as f:
                             f.writelines(lines)
                         self.sort_log_file()
+                        # Highlight the next entry above (or first line if none above)
+                        if line_number > 1:
+                            highlight_next = line_number - 1
+                        elif lines:
+                            highlight_next = 1
+                        else:
+                            highlight_next = None
                 else:
                     # Fallback: undo last entry
                     self.logger.undo_last_entry()
@@ -177,7 +184,7 @@ class CarCounterGUI:
             except Exception:
                 pass
             self.paused = True
-            self.update_log_display()
+            self.update_log_display(highlight_line=highlight_next)
 
     def show_frame(self, frame=None):
         if self.video and frame is None:

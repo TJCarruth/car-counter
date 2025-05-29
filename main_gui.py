@@ -98,7 +98,7 @@ class CarCounterGUI:
         self.root.bind('}', self.skip_forward_1hr)
         self.root.bind('<BackSpace>', self.undo)
         self.root.bind('<Control-z>', self.undo)  # Ctrl+Z for undo
-        self.root.bind('<Control-a>', self.redo)  # Ctrl+A for redo
+        self.root.bind('<Control-y>', self.redo)  # Ctrl+Y for redo
         self.log_text.bind('<Button-1>', self.on_log_click)
         # Bind all alphabet keys to log_key_event
         for char in 'abcdefghijklmnopqrstuvwxyz':

@@ -140,6 +140,36 @@ class CarCounterGUI:
 
 ## GUI Functions ##########################################################
 
+    def update_status(self):
+        self.status_label.config(text=f"{self.speed}x")
+        self.root.after(200, self.update_status)
+
+    def open_video(self, event=None):
+        path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov")])
+        if path:
+            self.video_path = path
+            self.video = VideoProcessor.open_video(path)
+            csv_path = os.path.splitext(path)[0] + ".csv"
+            self.logger = CSVLogger(csv_path)
+            self.paused = True
+            self.frame_pos = 0
+            VideoProcessor.show_frame(self)
+            self.update_log_display()
+            # --- Start time logic (from main.py) ---
+            video_basename = os.path.splitext(os.path.basename(path))[0]
+            default_start_time = VideoProcessor.extract_default_start_time(video_basename)
+            prompt = "Enter the video start time (HH:MM:SS)"
+            if default_start_time:
+                prompt += f" [default: {default_start_time}]"
+            prompt += ":"
+            start_time_str = simpledialog.askstring("Start Time", prompt, initialvalue=default_start_time or "00:00:00", parent=self.root)
+            if not start_time_str and default_start_time:
+                start_time_str = default_start_time
+            offset = VideoProcessor.parse_start_time(start_time_str) if start_time_str else None
+            self.start_offset = offset if offset is not None else timedelta()
+            VideoProcessor.show_frame(self)  # Show first frame
+            self.update_log_display()
+
     def update_log_display(self, highlight_line=None):
         if self.logger:
             try:
@@ -201,90 +231,17 @@ class CarCounterGUI:
                     frame = int(video_seconds * fps)
                     self.video.set(cv2.CAP_PROP_POS_FRAMES, frame)
                     self.paused = True
-                    self.show_frame()
+                    VideoProcessor.show_frame(self)
         except Exception:
             pass
 
     def quit_app(self, event=None):
         self.root.quit()
 
-## Video Functions ##########################################################
-    # All video-related methods are now handled by VideoProcessor static methods.
-    # The GUI calls VideoProcessor directly in event bindings and button commands.
-    # These stubs are no longer needed and can be removed.
 
-    def open_video(self, event=None):
-        path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov")])
-        if path:
-            self.video_path = path
-            self.video = VideoProcessor.open_video(path)
-            csv_path = os.path.splitext(path)[0] + ".csv"
-            self.logger = CSVLogger(csv_path)
-            self.paused = True
-            self.frame_pos = 0
-            self.show_frame()
-            self.update_log_display()
-            # --- Start time logic (from main.py) ---
-            video_basename = os.path.splitext(os.path.basename(path))[0]
-            default_start_time = VideoProcessor.extract_default_start_time(video_basename)
-            prompt = "Enter the video start time (HH:MM:SS)"
-            if default_start_time:
-                prompt += f" [default: {default_start_time}]"
-            prompt += ":"
-            start_time_str = simpledialog.askstring("Start Time", prompt, initialvalue=default_start_time or "00:00:00", parent=self.root)
-            if not start_time_str and default_start_time:
-                start_time_str = default_start_time
-            offset = VideoProcessor.parse_start_time(start_time_str) if start_time_str else None
-            self.start_offset = offset if offset is not None else timedelta()
-            self.show_frame()  # Show first frame
-            self.update_log_display()
+    
 
-    def toggle_play(self, event=None):
-        if not self.video:
-            return
-        self.paused = not self.paused
-        if not self.paused:
-            VideoProcessor.play_video(self)
-
-    def play_video(self):
-        VideoProcessor.play_video(self)
-
-    def show_frame(self, frame=None):
-        VideoProcessor.show_frame(self, frame)
-
-    def speed_up(self, event=None):
-        self.speed = VideoProcessor.speed_up(self.speed)
-
-    def slow_down(self, event=None):
-        self.speed = VideoProcessor.slow_down(self.speed)
-
-    def prev_frame(self, event=None):
-        VideoProcessor.prev_frame(self)
-
-    def next_frame(self, event=None):
-        VideoProcessor.next_frame(self)
-
-    def skip_back_5s(self, event=None):
-        VideoProcessor.skip_back_5s(self)
-
-    def skip_forward_5s(self, event=None):
-        VideoProcessor.skip_forward_5s(self)
-
-    def skip_back_5min(self, event=None):
-        VideoProcessor.skip_back_5min(self)
-
-    def skip_forward_5min(self, event=None):
-        VideoProcessor.skip_forward_5min(self)
-
-    def skip_back_1hr(self, event=None):
-        VideoProcessor.skip_back_1hr(self)
-
-    def skip_forward_1hr(self, event=None):
-        VideoProcessor.skip_forward_1hr(self)
-
-    def update_status(self):
-        self.status_label.config(text=f"{self.speed}x")
-        self.root.after(200, self.update_status)
+    
 
 ## Log Functions ##########################################################
 

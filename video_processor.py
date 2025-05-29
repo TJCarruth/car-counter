@@ -9,12 +9,20 @@ class VideoProcessor:
         return cv2.VideoCapture(path)
 
     @staticmethod
+    def toggle_play(gui, event=None):
+        if not gui.video:
+            return
+        gui.paused = not gui.paused
+        if not gui.paused:
+            VideoProcessor.play_video(gui)
+
+    @staticmethod
     def play_video(gui):
         if not gui.paused and gui.video and gui.video.isOpened():
             ret, frame = gui.video.read()
             if not ret:
                 return
-            gui.show_frame(frame)
+            VideoProcessor.show_frame(gui, frame)
             delay = int(30 / gui.speed)
             gui.root.after(delay, lambda: VideoProcessor.play_video(gui))
 
@@ -51,7 +59,7 @@ class VideoProcessor:
             #checks the current frame, checks that it is not the first frame, and then sets the video to the previous frame
             gui.video.set(cv2.CAP_PROP_POS_FRAMES, max(0, gui.video.get(cv2.CAP_PROP_POS_FRAMES) - 2))
             gui.paused = True
-            gui.show_frame()
+            VideoProcessor.show_frame(gui)
 
     @staticmethod
     def next_frame(gui):
@@ -60,7 +68,7 @@ class VideoProcessor:
             frame_count = int(gui.video.get(cv2.CAP_PROP_FRAME_COUNT)) # get total number of frames
             gui.video.set(cv2.CAP_PROP_POS_FRAMES, min(frame_count - 1, gui.video.get(cv2.CAP_PROP_POS_FRAMES) + 1))
             gui.paused = True
-            gui.show_frame()
+            VideoProcessor.show_frame(gui)
 
     @staticmethod
     def skip_back_5s(gui):
@@ -69,7 +77,7 @@ class VideoProcessor:
             fps = vp.get(cv2.CAP_PROP_FPS)
             new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 5))
             vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            gui.show_frame()
+            VideoProcessor.show_frame(gui)
 
     @staticmethod
     def skip_forward_5s(gui):
@@ -79,7 +87,7 @@ class VideoProcessor:
             frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
             new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 5))
             vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            gui.show_frame()
+            VideoProcessor.show_frame(gui)
 
     @staticmethod
     def skip_back_5min(gui):
@@ -88,7 +96,7 @@ class VideoProcessor:
             fps = vp.get(cv2.CAP_PROP_FPS)
             new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 60 * 5))
             vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            gui.show_frame()
+            VideoProcessor.show_frame(gui)
 
     @staticmethod
     def skip_forward_5min(gui):
@@ -98,7 +106,7 @@ class VideoProcessor:
             frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
             new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 60 * 5))
             vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            gui.show_frame()
+            VideoProcessor.show_frame(gui)
 
     @staticmethod
     def skip_back_1hr(gui):
@@ -107,7 +115,7 @@ class VideoProcessor:
             fps = vp.get(cv2.CAP_PROP_FPS)
             new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 60 * 60))
             vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            gui.show_frame()
+            VideoProcessor.show_frame(gui)
 
     @staticmethod
     def skip_forward_1hr(gui):
@@ -117,7 +125,7 @@ class VideoProcessor:
             frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
             new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 60 * 60))
             vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            gui.show_frame()
+            VideoProcessor.show_frame(gui)
 
     def __init__(self, video_path):
         self.video_capture = cv2.VideoCapture(video_path)

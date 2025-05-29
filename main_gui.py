@@ -68,10 +68,9 @@ class CarCounterGUI:
         speed_frame = Frame(kb_btn_frame)
         speed_frame.pack(fill='x', pady=1)
         Button(speed_frame, text="Speed +", command=self.speed_up).pack(side='left', expand=True, fill='x')
+        self.status_label = Label(speed_frame, anchor='center', width=5)
+        self.status_label.pack(side='left', padx=4, fill='x', expand=True)
         Button(speed_frame, text="Speed -", command=self.slow_down).pack(side='left', expand=True, fill='x')
-        # Status label next to speed buttons
-        self.status_label = Label(speed_frame)
-        self.status_label.pack(side='left', padx=(8,0), fill='x')
         self.update_status()
         # Frame shift side by side
         frame_frame = Frame(kb_btn_frame)
@@ -111,6 +110,7 @@ class CarCounterGUI:
         Button(side_panel, text="Save and Quit", command=self.quit_app).pack(side='bottom', pady=16, fill='x')
 
         # Prevent window from resizing automatically to fit widgets
+        # Had issues with the window continuously resizing
         self.root.update_idletasks()
         self.root.minsize(self.root.winfo_width(), self.root.winfo_height())
         self.root.maxsize(self.root.winfo_width(), self.root.winfo_height())
@@ -428,8 +428,7 @@ class CarCounterGUI:
         self.log_text.config(state='disabled')
 
     def update_status(self):
-        speed_str = f"Speed: {self.speed}x"
-        self.status_label.config(text=speed_str)
+        self.status_label.config(text=f"{self.speed}x")
         self.root.after(200, self.update_status)
 
     def on_log_click(self, event):

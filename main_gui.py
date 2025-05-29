@@ -21,6 +21,8 @@ class CarCounterGUI:
         self.status = StringVar()
         self.last_removed_entry = None
         self.last_removed_index = None
+        self.undo_stack = []  # Stack of (entry, index)
+        self.redo_stack = []  # Stack of (entry, index)
 
         # Layout frame for video and log
         main_frame = Frame(root)
@@ -95,6 +97,8 @@ class CarCounterGUI:
         self.root.bind('{', self.skip_back_1hr)
         self.root.bind('}', self.skip_forward_1hr)
         self.root.bind('<BackSpace>', self.undo)
+        self.root.bind('<Control-z>', self.undo)  # Ctrl+Z for undo
+        self.root.bind('<Control-a>', self.redo)  # Ctrl+A for redo
         self.log_text.bind('<Button-1>', self.on_log_click)
         # Bind all alphabet keys to log_key_event
         for char in 'abcdefghijklmnopqrstuvwxyz':
@@ -169,9 +173,10 @@ class CarCounterGUI:
                     with open(self.logger.filename, 'r') as f:
                         lines = [line for line in f if line.strip()]
                     if 1 <= line_number <= len(lines):
-                        # Save removed entry and its index
-                        self.last_removed_entry = lines[line_number - 1]
-                        self.last_removed_index = line_number - 1
+                        removed_entry = lines[line_number - 1]
+                        removed_index = line_number - 1
+                        self.undo_stack.append((removed_entry, removed_index))
+                        self.redo_stack.clear()
                         del lines[line_number - 1]
                         with open(self.logger.filename, 'w') as f:
                             f.writelines(lines)
@@ -186,8 +191,10 @@ class CarCounterGUI:
                     with open(self.logger.filename, 'r') as f:
                         lines = [line for line in f if line.strip()]
                     if lines:
-                        self.last_removed_entry = lines[-1]
-                        self.last_removed_index = len(lines) - 1
+                        removed_entry = lines[-1]
+                        removed_index = len(lines) - 1
+                        self.undo_stack.append((removed_entry, removed_index))
+                        self.redo_stack.clear()
                     self.logger.undo_last_entry()
                     self.sort_log_file()
             except Exception:
@@ -196,13 +203,13 @@ class CarCounterGUI:
             self.update_log_display(highlight_line=highlight_next)
 
     def restore_last_undo(self):
-        if self.logger and self.last_removed_entry is not None and self.last_removed_index is not None:
+        if self.logger and self.undo_stack:
             try:
+                entry, index = self.undo_stack.pop()
                 with open(self.logger.filename, 'r') as f:
                     lines = [line for line in f if line.strip()]
-                # Insert the removed entry back at its original index
-                insert_at = min(self.last_removed_index, len(lines))
-                lines.insert(insert_at, self.last_removed_entry)
+                insert_at = min(index, len(lines))
+                lines.insert(insert_at, entry)
                 with open(self.logger.filename, 'w') as f:
                     f.writelines(lines)
                 self.sort_log_file()
@@ -211,11 +218,31 @@ class CarCounterGUI:
                     sorted_lines = [line for line in f if line.strip()]
                 highlight_line = None
                 for idx, line in enumerate(sorted_lines, 1):
-                    if line.strip() == self.last_removed_entry.strip():
+                    if line.strip() == entry.strip():
                         highlight_line = idx
                         break
-                self.last_removed_entry = None
-                self.last_removed_index = None
+                self.redo_stack.append((entry, index))
+                self.update_log_display(highlight_line=highlight_line)
+            except Exception:
+                pass
+
+    def redo(self):
+        if self.logger and self.redo_stack:
+            try:
+                entry, index = self.redo_stack.pop()
+                with open(self.logger.filename, 'r') as f:
+                    lines = [line for line in f if line.strip()]
+                # Remove the entry at the same index (if it exists)
+                for i, line in enumerate(lines):
+                    if line.strip() == entry.strip():
+                        del lines[i]
+                        break
+                with open(self.logger.filename, 'w') as f:
+                    f.writelines(lines)
+                self.sort_log_file()
+                self.undo_stack.append((entry, index))
+                # Highlight the next entry above
+                highlight_line = index if index > 0 else 1
                 self.update_log_display(highlight_line=highlight_line)
             except Exception:
                 pass

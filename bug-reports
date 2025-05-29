@@ -1,5 +1,5 @@
 ## Active Bug List ##
-
+4. main_gui doesn't recognize the video's starting timestamp.
 
 ## Fixed Bugs ##
 2. The backspace key reports: "nothing to undo: 'CSVLogger' object has no attribute 'undo_last_entry'

@@ -31,30 +31,51 @@ A Python application for playing back camera footage and logging car counts via 
    ```sh
    python main.py
    ```
-4. Use the following to control the video: 
-      Space = Play/Pause 
-      -/= = Speed up / slow down
-      left/right Arrows = skip 5 seconds
-      [ / ] = skip 5 minutes
-      { / } = skip 1 hour
-      , . = one frame forward or back
-      Backspace = Undo & Pause
-      q = Quit 
-5. Press any other key to log an event and it's timestamp in the video.
+4. Use the following to control the video:
+   - Space = Play/Pause
+   - + / - = Speed up / slow down
+   - , / . = One frame forward or back
+   - ; / ' = Skip 5 seconds
+   - [ / ] = Skip 5 minutes
+   - { / } = Skip 1 hour
+   - Backspace = Undo & Pause
+   - Ctrl+Z = Undo
+   - Ctrl+Y = Redo
+   - q = Quit
+5. Press any other key to log an event and its timestamp in the video.
 6. After the session, check the generated CSV file in the output folder for your log data.
 7. Use the data analysis language of your choice to interpret the recorded key presses.
 
 ### GUI Usage
-1. run the main application:
+1. Run the main application:
    ```sh
    python main_gui.py
    ```
 2. Click the "Open Video" button to select your video file.
-3. Use the playback controls to play, pause, and navigate through the video.
+3. Use the playback control buttons or keyboard shortcuts to play, pause, and navigate through the video:
+   - Play/Pause
+   - Speed + / -
+   - Prev/Next Frame
+   - Skip +/-5s
+   - Skip +/-5min
+   - Skip +/-1hr
+   - Undo / Redo
+   - Quit
+   - Or use the corresponding keyboard shortcuts:
+     - Space = Play/Pause
+     - + / - = Playback Speed
+     - , / . = Frame Shift
+     - ; / ' = Skip 5s
+     - [ / ] = Skip 5min
+     - { / } = Skip 1hr
+     - Backspace = Undo
+     - Ctrl+Z = Undo
+     - Ctrl+Y = Redo
+     - q = Quit
 4. Press any letter key to log an event and its timestamp.
-5. The logged events will be automatically saved to a CSV file located in the same folder as the video file. 
-6. clicking on any timestamp in the log will seek to that point in the video. 
-7. You can also export the log to a CSV file by clicking the "Export" button.
+5. The logged events will be automatically saved to a CSV file located in the same folder as the video file.
+6. Clicking on any timestamp in the log will seek to that point in the video.
+7. You can also export the log to a CSV file by clicking the "Export Log" button.
 
 Note: Since the CSV is saved automatically, you can close the GUI at any time and the log will be saved. Opening the video again will load the previous log data. You can click the last timestamp to seek to the last logged event.
 

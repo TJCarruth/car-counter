@@ -65,23 +65,43 @@ class CarCounterGUI:
         self.clear_btn = Button(button_row, text="Clear Log", command=self.clear_log)
         self.clear_btn.pack(side='top', pady=2, fill='x')
 
-        # Controls label below buttons
-        controls_text = (
-            "Keybindings\n"
-            "Space = Play/Pause\n"
-            "+ / - = Playback Speed\n"
-            ", / . = Frame Shift\n"
-            "; / ' = Skip 5s\n"
-            "[ / ] = Skip 5min\n"
-            "{ / } = Skip 1hr\n"
-            "Any letter = Log\n"
-            "Backspace = Undo\n"
-            "Ctrl+Z = Undo\n"
-            "Ctrl+Y = Redo\n"
-            "q = Quit"
-        )
-        self.controls_label = Label(side_panel, text=controls_text, anchor='center', wraplength=200, justify='left')
-        self.controls_label.pack(fill='x', pady=(10, 10))
+        # --- Keybinding buttons row (grouped, above controls label) ---
+        kb_btn_frame = Frame(side_panel)
+        kb_btn_frame.pack(fill='x', pady=(0, 10))
+        # Play/Pause (full width)
+        Button(kb_btn_frame, text="Play/Pause", command=self.toggle_play).pack(side='top', pady=1, fill='x')
+        # Speed +/- side by side
+        speed_frame = Frame(kb_btn_frame)
+        speed_frame.pack(fill='x', pady=1)
+        Button(speed_frame, text="Speed +", command=self.speed_up).pack(side='left', expand=True, fill='x')
+        Button(speed_frame, text="Speed -", command=self.slow_down).pack(side='left', expand=True, fill='x')
+        # Frame shift side by side
+        frame_frame = Frame(kb_btn_frame)
+        frame_frame.pack(fill='x', pady=1)
+        Button(frame_frame, text="Prev Frame", command=self.prev_frame).pack(side='left', expand=True, fill='x')
+        Button(frame_frame, text="Next Frame", command=self.next_frame).pack(side='left', expand=True, fill='x')
+        # Skip 5s side by side
+        skip5s_frame = Frame(kb_btn_frame)
+        skip5s_frame.pack(fill='x', pady=1)
+        Button(skip5s_frame, text="Skip -5s", command=self.skip_back_5s).pack(side='left', expand=True, fill='x')
+        Button(skip5s_frame, text="Skip +5s", command=self.skip_forward_5s).pack(side='left', expand=True, fill='x')
+        # Skip 5min side by side
+        skip5min_frame = Frame(kb_btn_frame)
+        skip5min_frame.pack(fill='x', pady=1)
+        Button(skip5min_frame, text="Skip -5min", command=self.skip_back_5min).pack(side='left', expand=True, fill='x')
+        Button(skip5min_frame, text="Skip +5min", command=self.skip_forward_5min).pack(side='left', expand=True, fill='x')
+        # Skip 1hr side by side
+        skip1hr_frame = Frame(kb_btn_frame)
+        skip1hr_frame.pack(fill='x', pady=1)
+        Button(skip1hr_frame, text="Skip -1hr", command=self.skip_back_1hr).pack(side='left', expand=True, fill='x')
+        Button(skip1hr_frame, text="Skip +1hr", command=self.skip_forward_1hr).pack(side='left', expand=True, fill='x')
+        # Undo/Redo side by side
+        undo_frame = Frame(kb_btn_frame)
+        undo_frame.pack(fill='x', pady=1)
+        Button(undo_frame, text="Undo", command=self.undo).pack(side='left', expand=True, fill='x')
+        Button(undo_frame, text="Redo", command=self.redo).pack(side='left', expand=True, fill='x')
+        # Quit (full width)
+        Button(kb_btn_frame, text="Quit", command=self.quit_app).pack(side='top', pady=1, fill='x')
 
         # Status label at the bottom of side panel
         self.status_label = Label(side_panel)

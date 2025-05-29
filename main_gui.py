@@ -31,7 +31,7 @@ class CarCounterGUI:
         # Log display
         log_frame = Frame(main_frame)
         log_frame.pack(side=RIGHT, fill=Y, padx=10, pady=10)
-        self.log_text = Text(log_frame, width=25, height=25, state='disabled')
+        self.log_text = Text(log_frame, width=20, height=25, state='disabled')
         self.log_text.pack(side=LEFT, fill=Y)
         scrollbar = Scrollbar(log_frame, command=self.log_text.yview)
         scrollbar.pack(side=RIGHT, fill=Y)

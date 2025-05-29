@@ -1,8 +1,122 @@
 import cv2
 import os
 from datetime import timedelta, datetime
+from PIL import Image, ImageTk
 
 class VideoProcessor:
+    @staticmethod
+    def open_video(path):
+        return cv2.VideoCapture(path)
+
+    @staticmethod
+    def play_video(gui):
+        if not gui.paused and gui.video and gui.video.isOpened():
+            ret, frame = gui.video.read()
+            if not ret:
+                return
+            gui.show_frame(frame)
+            delay = int(30 / gui.speed)
+            gui.root.after(delay, lambda: VideoProcessor.play_video(gui))
+
+    @staticmethod
+    def show_frame(gui, frame=None):
+        if gui.video and frame is None:
+            ret, frame = gui.video.read()
+            if not ret:
+                gui.frame_label.config(image=gui.blank_imgtk)
+                gui.frame_label.imgtk = gui.blank_imgtk
+                return
+        if frame is not None:
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame_rgb)
+            img = img.resize((gui.frame_width, gui.frame_height), Image.LANCZOS)
+            imgtk = ImageTk.PhotoImage(image=img)
+            gui.frame_label.imgtk = imgtk
+            gui.frame_label.config(image=imgtk)
+        else:
+            gui.frame_label.config(image=gui.blank_imgtk)
+            gui.frame_label.imgtk = gui.blank_imgtk
+
+    @staticmethod
+    def speed_up(speed):
+        return min(speed + 0.25, 10)
+
+    @staticmethod
+    def slow_down(speed):
+        return max(speed - 0.25, 0.25)
+
+    @staticmethod
+    def prev_frame(gui):
+        if gui.video:
+            gui.video.set(cv2.CAP_PROP_POS_FRAMES, max(0, gui.video.get(cv2.CAP_PROP_POS_FRAMES) - 1))
+            gui.paused = True
+            gui.show_frame()
+
+    @staticmethod
+    def next_frame(gui):
+        if gui.video:
+            frame_count = int(gui.video.get(cv2.CAP_PROP_FRAME_COUNT))
+            gui.video.set(cv2.CAP_PROP_POS_FRAMES, min(frame_count - 1, gui.video.get(cv2.CAP_PROP_POS_FRAMES) + 1))
+            gui.paused = True
+            gui.show_frame()
+
+    @staticmethod
+    def skip_back_5s(gui):
+        if gui.video:
+            vp = gui.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 5))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            gui.show_frame()
+
+    @staticmethod
+    def skip_forward_5s(gui):
+        if gui.video:
+            vp = gui.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
+            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 5))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            gui.show_frame()
+
+    @staticmethod
+    def skip_back_5min(gui):
+        if gui.video:
+            vp = gui.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 60 * 5))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            gui.show_frame()
+
+    @staticmethod
+    def skip_forward_5min(gui):
+        if gui.video:
+            vp = gui.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
+            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 60 * 5))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            gui.show_frame()
+
+    @staticmethod
+    def skip_back_1hr(gui):
+        if gui.video:
+            vp = gui.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 60 * 60))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            gui.show_frame()
+
+    @staticmethod
+    def skip_forward_1hr(gui):
+        if gui.video:
+            vp = gui.video
+            fps = vp.get(cv2.CAP_PROP_FPS)
+            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
+            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 60 * 60))
+            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            gui.show_frame()
+
     def __init__(self, video_path):
         self.video_capture = cv2.VideoCapture(video_path)
         if not self.video_capture.isOpened():

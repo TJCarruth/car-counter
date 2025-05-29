@@ -213,12 +213,11 @@ class CarCounterGUI:
         path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov")])
         if path:
             self.video_path = path
-            self.video = cv2.VideoCapture(path)
+            self.video = VideoProcessor.open_video(path)
             csv_path = os.path.splitext(path)[0] + ".csv"
             self.logger = CSVLogger(csv_path)
             self.paused = True
             self.frame_pos = 0
-            # Do NOT call self.root.geometry or change window size here
             self.show_frame()
             self.update_log_display()
             # --- Start time logic (from main.py) ---
@@ -228,13 +227,11 @@ class CarCounterGUI:
             if default_start_time:
                 prompt += f" [default: {default_start_time}]"
             prompt += ":"
-            # Use simpledialog to prompt user
             start_time_str = simpledialog.askstring("Start Time", prompt, initialvalue=default_start_time or "00:00:00", parent=self.root)
             if not start_time_str and default_start_time:
                 start_time_str = default_start_time
             offset = VideoProcessor.parse_start_time(start_time_str) if start_time_str else None
             self.start_offset = offset if offset is not None else timedelta()
-            # --- End start time logic ---
             self.show_frame()  # Show first frame
             self.update_log_display()
 
@@ -243,104 +240,43 @@ class CarCounterGUI:
             return
         self.paused = not self.paused
         if not self.paused:
-            self.play_video()
+            VideoProcessor.play_video(self)
 
     def play_video(self):
-        if not self.paused and self.video and self.video.isOpened():
-            ret, frame = self.video.read()
-            if not ret:
-                return
-            self.show_frame(frame)
-            delay = int(30 / self.speed)
-            self.root.after(delay, self.play_video)
+        VideoProcessor.play_video(self)
 
     def show_frame(self, frame=None):
-        if self.video and frame is None:
-            ret, frame = self.video.read()
-            if not ret:
-                self.frame_label.config(image=self.blank_imgtk)
-                self.frame_label.imgtk = self.blank_imgtk
-                return
-        if frame is not None:
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            img = Image.fromarray(frame_rgb)
-            img = img.resize((self.frame_width, self.frame_height), Image.LANCZOS)
-            imgtk = ImageTk.PhotoImage(image=img)
-            self.frame_label.imgtk = imgtk
-            self.frame_label.config(image=imgtk)
-        else:
-            self.frame_label.config(image=self.blank_imgtk)
-            self.frame_label.imgtk = self.blank_imgtk
+        VideoProcessor.show_frame(self, frame)
 
     def speed_up(self, event=None):
-        self.speed = min(self.speed + 0.25, 10)
+        self.speed = VideoProcessor.speed_up(self.speed)
 
     def slow_down(self, event=None):
-        self.speed = max(self.speed - 0.25, 0.25)
+        self.speed = VideoProcessor.slow_down(self.speed)
 
     def prev_frame(self, event=None):
-        if self.video:
-            self.video.set(cv2.CAP_PROP_POS_FRAMES, max(0, self.video.get(cv2.CAP_PROP_POS_FRAMES) - 1))
-            self.paused = True
-            self.show_frame()
+        VideoProcessor.prev_frame(self)
 
     def next_frame(self, event=None):
-        if self.video:
-            frame_count = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.video.set(cv2.CAP_PROP_POS_FRAMES, min(frame_count - 1, self.video.get(cv2.CAP_PROP_POS_FRAMES) + 1))
-            self.paused = True
-            self.show_frame()
+        VideoProcessor.next_frame(self)
 
     def skip_back_5s(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 5))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
+        VideoProcessor.skip_back_5s(self)
 
     def skip_forward_5s(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
-            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 5))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
+        VideoProcessor.skip_forward_5s(self)
 
     def skip_back_5min(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 60 * 5))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
+        VideoProcessor.skip_back_5min(self)
 
     def skip_forward_5min(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
-            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 60 * 5))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
+        VideoProcessor.skip_forward_5min(self)
 
     def skip_back_1hr(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            new_pos = max(0, vp.get(cv2.CAP_PROP_POS_FRAMES) - int(fps * 60 * 60))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
+        VideoProcessor.skip_back_1hr(self)
 
     def skip_forward_1hr(self, event=None):
-        if self.video:
-            vp = self.video
-            fps = vp.get(cv2.CAP_PROP_FPS)
-            frame_count = int(vp.get(cv2.CAP_PROP_FRAME_COUNT))
-            new_pos = min(frame_count - 1, vp.get(cv2.CAP_PROP_POS_FRAMES) + int(fps * 60 * 60))
-            vp.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
-            self.show_frame()
+        VideoProcessor.skip_forward_1hr(self)
 
     def update_status(self):
         self.status_label.config(text=f"{self.speed}x")

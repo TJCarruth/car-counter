@@ -60,9 +60,12 @@ Note: Since the CSV is saved automatically, you can close the GUI at any time an
 
 ## Files
 - `main.py`: Main entry point for the application.
+- `main_gui.py`: Main entry point for the GUI application.
 - `csv_logger.py`: Handles logging of key presses to CSV.
 - `video_processor.py`: Handles video playback and processing.
 - `requirements.txt`: Python dependencies.
+
+note: The GUI version requires `tkinter` for the graphical interface, which is included in the standard Python library for most installations.
 
 ## License
 MIT License

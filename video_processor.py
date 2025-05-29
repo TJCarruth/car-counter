@@ -48,16 +48,16 @@ class VideoProcessor:
     @staticmethod
     def prev_frame(gui):
         if gui.video:
-            current_pos = int(gui.video.get(cv2.CAP_PROP_POS_FRAMES))
-            new_pos = max(0, current_pos - 1)
-            gui.video.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            #checks the current frame, checks that it is not the first frame, and then sets the video to the previous frame
+            gui.video.set(cv2.CAP_PROP_POS_FRAMES, max(0, gui.video.get(cv2.CAP_PROP_POS_FRAMES) - 2))
             gui.paused = True
-            VideoProcessor.show_frame(gui)
+            gui.show_frame()
 
     @staticmethod
     def next_frame(gui):
-        if gui.video:
-            frame_count = int(gui.video.get(cv2.CAP_PROP_FRAME_COUNT))
+        if gui.video: # check if video is opened
+            # checks the current frame, checks that it is not the last frame, and then sets the video to the next frame
+            frame_count = int(gui.video.get(cv2.CAP_PROP_FRAME_COUNT)) # get total number of frames
             gui.video.set(cv2.CAP_PROP_POS_FRAMES, min(frame_count - 1, gui.video.get(cv2.CAP_PROP_POS_FRAMES) + 1))
             gui.paused = True
             gui.show_frame()

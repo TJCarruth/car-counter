@@ -19,6 +19,8 @@ class CarCounterGUI:
         self.logger = None
         self.video_path = ""
         self.status = StringVar()
+        self.last_removed_entry = None
+        self.last_removed_index = None
 
         # Layout frame for video and log
         main_frame = Frame(root)
@@ -56,6 +58,9 @@ class CarCounterGUI:
         # Clear Log button
         self.clear_btn = Button(button_row, text="Clear Log", command=self.clear_log)
         self.clear_btn.pack(side='right', padx=10)
+        # Restore Last Undo button
+        self.restore_btn = Button(button_row, text="Restore Last Undo", command=self.restore_last_undo)
+        self.restore_btn.pack(side='right', padx=10)
 
         # Controls label inbtween the buttons
         self.controls_label = Label(button_row, text="", anchor='center')
@@ -161,16 +166,16 @@ class CarCounterGUI:
                 if ranges:
                     start = ranges[0]
                     line_number = int(str(start).split('.')[0])
-                    # Read all lines
                     with open(self.logger.filename, 'r') as f:
                         lines = [line for line in f if line.strip()]
                     if 1 <= line_number <= len(lines):
-                        # Remove the highlighted line
+                        # Save removed entry and its index
+                        self.last_removed_entry = lines[line_number - 1]
+                        self.last_removed_index = line_number - 1
                         del lines[line_number - 1]
                         with open(self.logger.filename, 'w') as f:
                             f.writelines(lines)
                         self.sort_log_file()
-                        # Highlight the next entry above (or first line if none above)
                         if line_number > 1:
                             highlight_next = line_number - 1
                         elif lines:
@@ -178,13 +183,42 @@ class CarCounterGUI:
                         else:
                             highlight_next = None
                 else:
-                    # Fallback: undo last entry
+                    with open(self.logger.filename, 'r') as f:
+                        lines = [line for line in f if line.strip()]
+                    if lines:
+                        self.last_removed_entry = lines[-1]
+                        self.last_removed_index = len(lines) - 1
                     self.logger.undo_last_entry()
                     self.sort_log_file()
             except Exception:
                 pass
             self.paused = True
             self.update_log_display(highlight_line=highlight_next)
+
+    def restore_last_undo(self):
+        if self.logger and self.last_removed_entry is not None and self.last_removed_index is not None:
+            try:
+                with open(self.logger.filename, 'r') as f:
+                    lines = [line for line in f if line.strip()]
+                # Insert the removed entry back at its original index
+                insert_at = min(self.last_removed_index, len(lines))
+                lines.insert(insert_at, self.last_removed_entry)
+                with open(self.logger.filename, 'w') as f:
+                    f.writelines(lines)
+                self.sort_log_file()
+                # Find the new line number of the restored entry
+                with open(self.logger.filename, 'r') as f:
+                    sorted_lines = [line for line in f if line.strip()]
+                highlight_line = None
+                for idx, line in enumerate(sorted_lines, 1):
+                    if line.strip() == self.last_removed_entry.strip():
+                        highlight_line = idx
+                        break
+                self.last_removed_entry = None
+                self.last_removed_index = None
+                self.update_log_display(highlight_line=highlight_line)
+            except Exception:
+                pass
 
     def show_frame(self, frame=None):
         if self.video and frame is None:

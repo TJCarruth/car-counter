@@ -344,9 +344,12 @@ class CarCounterGUI:
                 seconds = int(parts[2])
                 ms = int(parts[3]) if len(parts) > 3 else 0
                 total_seconds = hours * 3600 + minutes * 60 + seconds + ms / 1000.0
+                # Subtract offset
+                offset_seconds = self.start_offset.total_seconds() if self.start_offset else 0
+                video_seconds = max(0, total_seconds - offset_seconds)
                 if self.video:
                     fps = self.video.get(cv2.CAP_PROP_FPS)
-                    frame = int(total_seconds * fps)
+                    frame = int(video_seconds * fps)
                     self.video.set(cv2.CAP_PROP_POS_FRAMES, frame)
                     self.paused = True
                     self.show_frame()

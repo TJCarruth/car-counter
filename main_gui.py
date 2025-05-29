@@ -19,7 +19,6 @@ class CarCounterGUI:
         self.logger = None
         self.video_path = ""
         self.status = StringVar()
-        self.status.set("No video loaded.")
 
         # Layout frame for video and log
         main_frame = Frame(root)
@@ -104,7 +103,6 @@ class CarCounterGUI:
             self.video = cv2.VideoCapture(path)
             csv_path = os.path.splitext(path)[0] + ".csv"
             self.logger = CSVLogger(csv_path)
-            self.status.set(f"Loaded: {os.path.basename(path)}")
             self.paused = True
             self.frame_pos = 0
             # Do NOT call self.root.geometry or change window size here
@@ -129,7 +127,6 @@ class CarCounterGUI:
 
     def toggle_play(self, event=None):
         if not self.video:
-            self.status.set("No video loaded.")
             return
         self.paused = not self.paused
         if not self.paused:
@@ -139,7 +136,6 @@ class CarCounterGUI:
         if not self.paused and self.video and self.video.isOpened():
             ret, frame = self.video.read()
             if not ret:
-                self.status.set("End of video.")
                 return
             self.show_frame(frame)
             delay = int(30 / self.speed)
@@ -147,7 +143,6 @@ class CarCounterGUI:
 
     def log_event(self, event=None):
         if not self.logger or not self.video:
-            self.status.set("No video loaded.")
             return
         frame_idx = int(self.video.get(cv2.CAP_PROP_POS_FRAMES))
         fps = self.video.get(cv2.CAP_PROP_FPS)
@@ -156,7 +151,6 @@ class CarCounterGUI:
         timestamp_str = VideoProcessor.format_timestamp(ms, self.start_offset)
         self.logger.log_entry("event", timestamp_str)
         self.sort_log_file()
-        self.status.set(f"Logged event at {timestamp_str}")
         self.update_log_display()
 
     def undo(self, event=None):
@@ -164,9 +158,8 @@ class CarCounterGUI:
             try:
                 self.logger.undo_last_entry()
                 self.sort_log_file()
-                self.status.set("Last event undone.")
             except Exception as e:
-                self.status.set(str(e))
+                pass
             self.paused = True
             self.update_log_display()
 
@@ -190,11 +183,9 @@ class CarCounterGUI:
 
     def speed_up(self, event=None):
         self.speed = min(self.speed + 0.25, 10)
-        self.status.set(f"Speed: {self.speed}x")
 
     def slow_down(self, event=None):
         self.speed = max(self.speed - 0.25, 0.25)
-        self.status.set(f"Speed: {self.speed}x")
 
     def prev_frame(self, event=None):
         if self.video:
@@ -262,7 +253,6 @@ class CarCounterGUI:
 
     def export_log(self):
         if not self.logger:
-            self.status.set("No log to export.")
             return
         # Suggest a default name based on the video title
         if self.video_path:
@@ -279,13 +269,11 @@ class CarCounterGUI:
             try:
                 with open(self.logger.filename, 'r') as src, open(export_path, 'w') as dst:
                     dst.write(src.read())
-                self.status.set(f"Log exported to {os.path.basename(export_path)}")
             except Exception as e:
-                self.status.set(f"Export failed: {e}")
+                pass
 
     def clear_log(self):
         if not self.logger:
-            self.status.set("No log to clear.")
             return
         confirm = messagebox.askyesno("Clear Log", "Are you sure you want to clear the log? This cannot be undone.")
         if confirm:
@@ -293,10 +281,9 @@ class CarCounterGUI:
             try:
                 with open(self.logger.filename, 'w') as f:
                     f.write("")
-                self.status.set("Log cleared.")
                 self.update_log_display()
             except Exception as e:
-                self.status.set(f"Failed to clear log: {e}")
+                pass
 
     def update_log_display(self, highlight_line=None):
         if self.logger:

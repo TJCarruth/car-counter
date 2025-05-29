@@ -60,9 +60,6 @@ class CarCounterGUI:
         # Clear Log button
         self.clear_btn = Button(button_row, text="Clear Log", command=self.clear_log)
         self.clear_btn.pack(side='right', padx=10)
-        # Restore Last Undo button
-        self.restore_btn = Button(button_row, text="Restore Last Undo", command=self.restore_last_undo)
-        self.restore_btn.pack(side='right', padx=10)
 
         # Controls label inbtween the buttons
         self.controls_label = Label(button_row, text="", anchor='center')

@@ -1,23 +1,170 @@
+import os
+
 class CSVLogger:
     def __init__(self, filename):
         self.filename = filename
-        self.logged_keys = set()
 
     def log_entry(self, key, timestamp):
-        if key not in self.logged_keys:
-            with open(self.filename, 'a') as file:
-                file.write(f"{key},{timestamp}\n")
-            self.logged_keys.add(key)
+        with open(self.filename, 'a') as file:
+            file.write(f"{timestamp}, {key}\n")
 
-    def ensure_unique_keys(self, keys):
-        unique_keys = []
-        for key in keys:
-            if key not in self.logged_keys:
-                unique_keys.append(key)
-                self.logged_keys.add(key)
-        return unique_keys
+    def display_entries(self, num_entries=5):
+        if not os.path.exists(self.filename):
+            print("No observations yet.")
+            return
+        with open(self.filename, 'r') as f:
+            lines = f.readlines()
+            print("\nLatest Observations:")
+            for line in lines[-num_entries:]:
+                print(line.strip())
 
-    def clear_log(self):
-        with open(self.filename, 'w') as file:
-            file.write("key,timestamp\n")  # Write header for CSV file
-        self.logged_keys.clear()
+    def undo_last_entry(self):
+        if not os.path.exists(self.filename):
+            raise Exception("Log file does not exist.")
+        with open(self.filename, 'r') as f:
+            lines = f.readlines()
+        if len(lines) <= 1:
+            raise Exception("No entries to undo.")
+        with open(self.filename, 'w') as f:
+            f.writelines(lines[:-1])
+
+    def sort_log_file(self):
+        import re
+        try:
+            with open(self.filename, 'r') as f:
+                lines = [line for line in f if line.strip()]
+            def parse_ts(line):
+                if ',' in line:
+                    ts = line.split(',')[0].strip()
+                elif ':' in line:
+                    ts = line.split(':', 1)[1].strip()
+                else:
+                    return float('inf')
+                parts = re.split(r'[:]', ts)
+                try:
+                    h, m, s = int(parts[0]), int(parts[1]), int(parts[2])
+                    ms = int(parts[3]) if len(parts) > 3 else 0
+                    return h * 3600 + m * 60 + s + ms / 1000.0
+                except Exception:
+                    return float('inf')
+            lines.sort(key=parse_ts)
+            with open(self.filename, 'w') as f:
+                f.writelines(lines)
+        except Exception:
+            pass
+
+    def export_log(self, gui):
+        import os
+        from tkinter import filedialog
+        if not self.filename:
+            return
+        if hasattr(gui, 'video_path') and gui.video_path:
+            base = os.path.splitext(os.path.basename(gui.video_path))[0]
+            suggested_name = base + ".csv"
+        else:
+            suggested_name = "log.csv"
+        export_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")],
+            initialfile=suggested_name
+        )
+        if export_path:
+            try:
+                with open(self.filename, 'r') as src, open(export_path, 'w') as dst:
+                    dst.write(src.read())
+            except Exception:
+                pass
+
+    def clear_log(self, gui):
+        from tkinter import messagebox
+        if not self.filename:
+            return
+        confirm = messagebox.askyesno("Clear Log", "Are you sure you want to clear the log? This cannot be undone.")
+        if confirm:
+            try:
+                with open(self.filename, 'w') as f:
+                    f.write("")
+                gui.update_log_display()
+            except Exception:
+                pass
+
+    def undo(self, gui):
+        highlight_next = None
+        try:
+            ranges = gui.log_text.tag_ranges('highlight')
+            if ranges:
+                start = ranges[0]
+                line_number = int(str(start).split('.')[0])
+                with open(self.filename, 'r') as f:
+                    lines = [line for line in f if line.strip()]
+                if 1 <= line_number <= len(lines):
+                    removed_entry = lines[line_number - 1]
+                    removed_index = line_number - 1
+                    gui.undo_stack.append((removed_entry, removed_index))
+                    gui.redo_stack.clear()
+                    del lines[line_number - 1]
+                    with open(self.filename, 'w') as f:
+                        f.writelines(lines)
+                    self.sort_log_file()
+                    if line_number > 1:
+                        highlight_next = line_number - 1
+                    elif lines:
+                        highlight_next = 1
+                    else:
+                        highlight_next = None
+            else:
+                with open(self.filename, 'r') as f:
+                    lines = [line for line in f if line.strip()]
+                if lines:
+                    removed_entry = lines[-1]
+                    removed_index = len(lines) - 1
+                    gui.undo_stack.append((removed_entry, removed_index))
+                    gui.redo_stack.clear()
+                self.undo_last_entry()
+                self.sort_log_file()
+        except Exception:
+            pass
+        gui.paused = True
+        gui.update_log_display(highlight_line=highlight_next)
+
+    def restore_last_undo(self, gui):
+        if gui.undo_stack:
+            try:
+                entry, index = gui.undo_stack.pop()
+                with open(self.filename, 'r') as f:
+                    lines = [line for line in f if line.strip()]
+                insert_at = min(index, len(lines))
+                lines.insert(insert_at, entry)
+                with open(self.filename, 'w') as f:
+                    f.writelines(lines)
+                self.sort_log_file()
+                with open(self.filename, 'r') as f:
+                    sorted_lines = [line for line in f if line.strip()]
+                highlight_line = None
+                for idx, line in enumerate(sorted_lines, 1):
+                    if line.strip() == entry.strip():
+                        highlight_line = idx
+                        break
+                gui.redo_stack.append((entry, index))
+                gui.update_log_display(highlight_line=highlight_line)
+            except Exception:
+                pass
+
+    def redo(self, gui):
+        if gui.redo_stack:
+            try:
+                entry, index = gui.redo_stack.pop()
+                with open(self.filename, 'r') as f:
+                    lines = [line for line in f if line.strip()]
+                for i, line in enumerate(lines):
+                    if line.strip() == entry.strip():
+                        del lines[i]
+                        break
+                with open(self.filename, 'w') as f:
+                    f.writelines(lines)
+                self.sort_log_file()
+                gui.undo_stack.append((entry, index))
+                highlight_line = index if index > 0 else 1
+                gui.update_log_display(highlight_line=highlight_line)
+            except Exception:
+                pass

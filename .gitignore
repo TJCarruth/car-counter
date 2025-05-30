@@ -1,0 +1,9 @@
+# Ignore all files in output and videos folders
+output/*
+videos/*
+
+# But keep the folders themselves
+!output/.gitkeep
+!videos/.gitkeep
+__pycache__/csv_logger.cpython-313.pyc
+__pycache__/video_processor.cpython-313.pyc

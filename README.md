@@ -6,6 +6,7 @@ A Python application for playing back camera footage and logging car counts via 
 - Plays back camera/video footage
 - Logs key presses with timestamps
 - Outputs results to a CSV file for easy analysis
+- both a terminal-based and a GUI version available
 
 ## Installation
 1. Clone this repository:
@@ -21,25 +22,74 @@ A Python application for playing back camera footage and logging car counts via 
    pip install -r requirements.txt
    ```
 
-## Usage
-1. Place your video footage in the videos folder.
-2. Run the main application:
+## Usage ########################################
+
+### Terminal Usage
+1. Place your video footage in the video folder.
+2. Make sure the output folder is empty and any previous CSV files have been saved elsewhere. 
+3. Run the main application:
    ```sh
    python main.py
    ```
-3. Follow the onscreen prompts.
-4. Use the designated keys to log car counts as you watch the footage. Each key press will be recorded with a timestamp.
-5. Controls: Space=Play/Pause | +/-=Speed | Arrows=Skip | , .=Frame | Any key=Log | Backspace=Undo & Pause | q=Quit
-6. After the session, check the generated CSV file in the outputs folder for your log data.
+4. Use the following to control the video:
+   - Space = Play/Pause
+   - + / - = Speed up / slow down
+   - , / . = One frame forward or back
+   - ; / ' = Skip 5 seconds
+   - [ / ] = Skip 5 minutes
+   - { / } = Skip 1 hour
+   - Backspace = Undo & Pause
+   - Ctrl+Z = Undo
+   - Ctrl+Y = Redo
+   - escape = Quit
+5. Press any other key to log an event and its timestamp in the video.
+6. After the session, check the generated CSV file in the output folder for your log data.
+7. Use the data analysis language of your choice to interpret the recorded key presses.
+
+### GUI Usage
+1. Run the main application:
+   ```sh
+   python main_gui.py
+   ```
+2. Click the "Open Video" button to select your video file.
+3. Use the playback control buttons or keyboard shortcuts to play, pause, and navigate through the video:
+   - Play/Pause
+   - Speed + / -
+   - Prev/Next Frame
+   - Skip +/-5s
+   - Skip +/-5min
+   - Skip +/-1hr
+   - Undo / Redo
+   - Quit
+   - Or use the corresponding keyboard shortcuts:
+     - Space = Play/Pause
+     - + / - = Playback Speed
+     - , / . = Frame Shift
+     - ; / ' = Skip 5s
+     - [ / ] = Skip 5min
+     - { / } = Skip 1hr
+     - Backspace = Undo
+     - Ctrl+Z = Undo
+     - Ctrl+Y = Redo
+     - q = Quit
+4. Press any letter key to log an event and its timestamp.
+5. The logged events will be automatically saved to a CSV file located in the same folder as the video file.
+6. Clicking on any timestamp in the log will seek to that point in the video.
+7. You can also export the log to a CSV file by clicking the "Export Log" button.
+
+Note: Since the CSV is saved automatically, you can close the GUI at any time and the log will be saved. Opening the video again will load the previous log data. You can click the last timestamp to seek to the last logged event.
 
 ## Files
 - `main.py`: Main entry point for the application.
+- `main_gui.py`: Main entry point for the GUI application.
 - `csv_logger.py`: Handles logging of key presses to CSV.
 - `video_processor.py`: Handles video playback and processing.
 - `requirements.txt`: Python dependencies.
 
+note: The GUI version requires `tkinter` for the graphical interface, which is included in the standard Python library for most installations.
+
 ## License
-MIT License (or specify your license here)
+MIT License
 
 ## Author
 Tyler Carruth

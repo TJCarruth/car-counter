@@ -162,7 +162,7 @@ class CarCounterGUI:
             VideoProcessor.show_frame(self)  # Show first frame
             self.update_log_display()
 
-    def update_log_display(self, highlight_lines=None):
+    def update_log_display(self, highlight_line=None, highlight_lines=None):
         if self.logger:
             try:
                 with open(self.logger.filename, 'r') as f:
@@ -176,11 +176,17 @@ class CarCounterGUI:
         self.log_text.insert('end', log_content)
         lines = log_content.splitlines()
         self.log_text.tag_remove('highlight', '1.0', 'end')
+        # If highlight_lines is provided, highlight all those lines
         if highlight_lines:
             for line_num in highlight_lines:
                 self.log_text.tag_add('highlight', f'{line_num}.0', f'{line_num}.end')
             self.log_text.tag_configure('highlight', background='yellow')
             self.log_text.see(f'{highlight_lines[0]}.0')
+        # Otherwise, if highlight_line is provided, highlight that single line
+        elif highlight_line is not None:
+            self.log_text.tag_add('highlight', f'{highlight_line}.0', f'{highlight_line}.end')
+            self.log_text.tag_configure('highlight', background='yellow')
+            self.log_text.see(f'{highlight_line}.0')
         self.log_text.config(state='disabled')
 
     def on_log_click(self, event):

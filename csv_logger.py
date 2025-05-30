@@ -168,3 +168,17 @@ class CSVLogger:
                 gui.update_log_display(highlight_line=highlight_line)
             except Exception:
                 pass
+
+    def search_entries(self, search_term, gui):
+        """Highlight all log entries containing the search_term (case-insensitive) in the GUI log display."""
+        if not os.path.exists(self.filename):
+            print("No log file found.")
+            return
+        highlight_lines = []
+        with open(self.filename, 'r') as f:
+            for idx, line in enumerate(f, 1):
+                if search_term.lower() in line.lower():
+                    highlight_lines.append(idx)
+        gui.update_log_display(highlight_lines=highlight_lines)
+        if not highlight_lines:
+            print(f"No entries found containing: {search_term}")

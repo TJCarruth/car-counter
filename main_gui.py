@@ -95,6 +95,8 @@ class CarCounterGUI:
         undo_frame.pack(fill='x', pady=1)
         Button(undo_frame, text="Undo", command=lambda: self.logger.restore_last_undo(self)).pack(side='left', expand=True, fill='x')
         Button(undo_frame, text="Redo", command=lambda: self.logger.redo(self)).pack(side='left', expand=True, fill='x')
+        # Add Search Log button to log_btn_frame
+        Button(log_btn_frame, text="Search Log", command=self.prompt_search_log).pack(side='top', pady=2, fill='x')
 
         # Delete entry button at the bottom of the controls container
         Button(log_btn_frame, text="Delete Entry", command=lambda: self.logger.undo(self)).pack(side='bottom', pady=2, fill='x')
@@ -160,7 +162,7 @@ class CarCounterGUI:
             VideoProcessor.show_frame(self)  # Show first frame
             self.update_log_display()
 
-    def update_log_display(self, highlight_line=None):
+    def update_log_display(self, highlight_lines=None):
         if self.logger:
             try:
                 with open(self.logger.filename, 'r') as f:
@@ -173,16 +175,12 @@ class CarCounterGUI:
         self.log_text.delete(1.0, 'end')
         self.log_text.insert('end', log_content)
         lines = log_content.splitlines()
-        if lines:
-            if highlight_line is None:
-                highlight_line = len(lines)
-            # Remove previous highlight
-            self.log_text.tag_remove('highlight', '1.0', 'end')
-            # Highlight the specified entry
-            self.log_text.tag_add('highlight', f'{highlight_line}.0', f'{highlight_line}.end')
+        self.log_text.tag_remove('highlight', '1.0', 'end')
+        if highlight_lines:
+            for line_num in highlight_lines:
+                self.log_text.tag_add('highlight', f'{line_num}.0', f'{line_num}.end')
             self.log_text.tag_configure('highlight', background='yellow')
-            # Center the display around the highlighted entry
-            self.log_text.see(f'{highlight_line}.0')
+            self.log_text.see(f'{highlight_lines[0]}.0')
         self.log_text.config(state='disabled')
 
     def on_log_click(self, event):
@@ -250,7 +248,10 @@ class CarCounterGUI:
             highlight_line = None
         self.update_log_display(highlight_line=highlight_line)
 
-
+    def prompt_search_log(self):
+        search_term = simpledialog.askstring("Search Log", "Enter search term:", parent=self.root)
+        if search_term and self.logger:
+            self.logger.search_entries(search_term, self)
 
 if __name__ == "__main__":
     root = Tk()

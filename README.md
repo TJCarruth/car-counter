@@ -6,12 +6,12 @@ A Python application for playing back camera footage and logging car counts via 
 - Plays back camera/video footage
 - Logs key presses with timestamps
 - Outputs results to a CSV file for easy analysis
-- both a terminal-based and a GUI version available
+- GUI version only
 
 ## Installation
 1. Clone this repository:
    ```sh
-   git clone <repo-url>
+   git clone https://github.com/TJCarruth/car-counter.git
    ```
 2. Navigate to the project directory:
    ```sh
@@ -22,35 +22,25 @@ A Python application for playing back camera footage and logging car counts via 
    pip install -r requirements.txt
    ```
 
-## Usage ########################################
+### (Optional) Compile to Standalone Executable
+You can use [PyInstaller](https://pyinstaller.org/) to create a standalone executable:
 
-### Terminal Usage
-1. Place your video footage in the video folder.
-2. Make sure the output folder is empty and any previous CSV files have been saved elsewhere. 
-3. Run the main application:
+1. Install PyInstaller:
    ```sh
-   python main.py
+   pip install pyinstaller
    ```
-4. Use the following to control the video:
-   - Space = Play/Pause
-   - + / - = Speed up / slow down
-   - , / . = One frame forward or back
-   - ; / ' = Skip 5 seconds
-   - [ / ] = Skip 5 minutes
-   - { / } = Skip 1 hour
-   - Backspace = Undo & Pause
-   - Ctrl+Z = Undo
-   - Ctrl+Y = Redo
-   - escape = Quit
-5. Press any other key to log an event and its timestamp in the video.
-6. After the session, check the generated CSV file in the output folder for your log data.
-7. Use the data analysis language of your choice to interpret the recorded key presses.
+2. Run PyInstaller on the GUI script:
+   ```sh
+   pyinstaller --onefile --windowed --clean main_gui.py
+   ```
+3. The standalone executable will be found in the `dist` folder.
 
-### GUI Usage
+## Usage
 1. Run the main application:
    ```sh
    python main_gui.py
    ```
+   Or, if you compiled an executable, run the generated file in the `dist` folder.
 2. Click the "Open Video" button to select your video file.
 3. Use the playback control buttons or keyboard shortcuts to play, pause, and navigate through the video:
    - Play/Pause
@@ -80,13 +70,12 @@ A Python application for playing back camera footage and logging car counts via 
 Note: Since the CSV is saved automatically, you can close the GUI at any time and the log will be saved. Opening the video again will load the previous log data. You can click the last timestamp to seek to the last logged event.
 
 ## Files
-- `main.py`: Main entry point for the application.
 - `main_gui.py`: Main entry point for the GUI application.
 - `csv_logger.py`: Handles logging of key presses to CSV.
 - `video_processor.py`: Handles video playback and processing.
 - `requirements.txt`: Python dependencies.
 
-note: The GUI version requires `tkinter` for the graphical interface, which is included in the standard Python library for most installations.
+Note: The GUI version requires `tkinter` for the graphical interface, which is included in the standard Python library for most installations.
 
 ## License
 MIT License

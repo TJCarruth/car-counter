@@ -23,7 +23,7 @@ A Python application for playing back camera footage and logging car counts via 
    ```
 
 ### (Optional) Compile to Standalone Executable
-You can use [PyInstaller](https://pyinstaller.org/) to create a standalone executable:
+You can use [PyInstaller](https://pyinstaller.org/) to create a standalone executable. Note that a version for Windows is provided in the `dist` folder, but you can also compile it yourself for other platforms:
 
 1. Install PyInstaller:
    ```sh

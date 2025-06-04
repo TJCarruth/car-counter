@@ -1,7 +1,7 @@
 import os
 import cv2
 import threading
-from tkinter import Tk, Button, Label, filedialog, StringVar, Frame, Text, Scrollbar, RIGHT, Y, LEFT, BOTH, simpledialog, messagebox
+from tkinter import Tk, Button, Label, filedialog, StringVar, Frame, Text, Scrollbar, RIGHT, Y, LEFT, BOTH, simpledialog, messagebox, Toplevel
 from video_processor import VideoProcessor
 from csv_logger import CSVLogger
 from datetime import timedelta
@@ -49,7 +49,10 @@ class CarCounterGUI:
         controls_container.pack(side=LEFT, fill=Y, padx=5, pady=10)
         controls_container.pack(fill='y', expand=True)
 
-        # Open Video Button at the very top
+        # Add Instructions button above Open Video
+        self.instructions_btn = Button(controls_container, text="Instructions", command=self.show_instructions)
+        self.instructions_btn.pack(side='top', pady=(0, 8), fill='x')
+        # Open Video Button just below Instructions
         self.open_btn = Button(controls_container, text="Open Video", command=self.open_video)
         self.open_btn.pack(side='top', pady=(0, 16), fill='x')
 
@@ -258,6 +261,24 @@ class CarCounterGUI:
         search_term = simpledialog.askstring("Search Log", "Enter search term:", parent=self.root)
         if search_term and self.logger:
             self.logger.search_entries(search_term, self)
+
+    def show_instructions(self):
+        """Open a new window and display the contents of README.md."""
+        instructions_win = Toplevel(self.root)
+        instructions_win.title("Instructions")
+        instructions_win.geometry("700x600")
+        text_widget = Text(instructions_win, wrap='word')
+        text_widget.pack(fill='both', expand=True)
+        scrollbar = Scrollbar(text_widget, command=text_widget.yview)
+        text_widget['yscrollcommand'] = scrollbar.set
+        scrollbar.pack(side=RIGHT, fill=Y)
+        try:
+            with open("README.md", "r", encoding="utf-8") as f:
+                content = f.read()
+        except Exception as e:
+            content = f"Could not load instructions: {e}"
+        text_widget.insert('1.0', content)
+        text_widget.config(state='disabled')
 
 if __name__ == "__main__":
     root = Tk()

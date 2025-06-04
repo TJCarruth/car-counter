@@ -5,10 +5,16 @@ class CSVLogger:
         self.filename = filename
 
     def log_entry(self, key, timestamp):
+        """
+        Append a new log entry with the given key and timestamp to the CSV file.
+        """
         with open(self.filename, 'a') as file:
             file.write(f"{timestamp}, {key}\n")
 
     def display_entries(self, num_entries=5):
+        """
+        Print the latest num_entries from the log file to the console.
+        """
         if not os.path.exists(self.filename):
             print("No observations yet.")
             return
@@ -19,6 +25,9 @@ class CSVLogger:
                 print(line.strip())
 
     def undo_last_entry(self):
+        """
+        Remove the last entry from the log file. Raises an exception if the log file does not exist or is empty.
+        """
         if not os.path.exists(self.filename):
             raise Exception("Log file does not exist.")
         with open(self.filename, 'r') as f:
@@ -29,6 +38,9 @@ class CSVLogger:
             f.writelines(lines[:-1])
 
     def sort_log_file(self):
+        """
+        Sort the log file entries by timestamp in ascending order.
+        """
         import re
         try:
             with open(self.filename, 'r') as f:
@@ -54,6 +66,9 @@ class CSVLogger:
             pass
 
     def export_log(self, gui):
+        """
+        Export the current log file to a user-selected location using a file dialog.
+        """
         import os
         from tkinter import filedialog
         if not self.filename:
@@ -76,6 +91,9 @@ class CSVLogger:
                 pass
 
     def clear_log(self, gui):
+        """
+        Clear all entries from the log file after user confirmation, and update the GUI log display.
+        """
         from tkinter import messagebox
         if not self.filename:
             return
@@ -89,6 +107,9 @@ class CSVLogger:
                 pass
 
     def undo(self, gui):
+        """
+        Undo the last log entry (or highlighted entry) in the GUI, supporting undo/redo stacks.
+        """
         highlight_next = None
         try:
             ranges = gui.log_text.tag_ranges('highlight')
@@ -128,6 +149,9 @@ class CSVLogger:
         gui.update_log_display(highlight_line=highlight_next)
 
     def restore_last_undo(self, gui):
+        """
+        Restore the last undone log entry from the undo stack and update the GUI log display.
+        """
         if gui.undo_stack:
             try:
                 entry, index = gui.undo_stack.pop()
@@ -151,6 +175,9 @@ class CSVLogger:
                 pass
 
     def redo(self, gui):
+        """
+        Redo the last undone log entry from the redo stack and update the GUI log display.
+        """
         if gui.redo_stack:
             try:
                 entry, index = gui.redo_stack.pop()
@@ -170,7 +197,9 @@ class CSVLogger:
                 pass
 
     def search_entries(self, search_term, gui):
-        """Highlight all log entries containing the search_term (case-insensitive) in the GUI log display."""
+        """
+        Highlight all log entries containing the search_term (case-insensitive) in the GUI log display.
+        """
         if not os.path.exists(self.filename):
             print("No log file found.")
             return

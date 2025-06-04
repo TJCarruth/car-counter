@@ -11,6 +11,7 @@ class CarCounterGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Car Counter")
+        # Playback and state variables
         self.paused = True
         self.speed = 1
         self.frame_pos = 0
@@ -18,93 +19,92 @@ class CarCounterGUI:
         self.video = None
         self.logger = None
         self.video_path = ""
-        self.undo_stack = []  # Stack of (entry, index)
-        self.redo_stack = []  # Stack of (entry, index)
+        self.undo_stack = []  # Stack of (entry, index) for undo
+        self.redo_stack = []  # Stack of (entry, index) for redo
 
-        # Layout frame for video and log
+        # --- GUI Layout ---
+        # Main frame contains video and log
         main_frame = Frame(root)
         main_frame.pack(fill=BOTH, expand=True)
 
-        # Log display
+        # Log display (right side)
         log_frame = Frame(main_frame)
         log_frame.pack(side=RIGHT, fill=Y, padx=10, pady=10)
-        self.log_text = Text(log_frame, width=20, height=25, state='disabled')
+        self.log_text = Text(log_frame, width=20, height=25, state='disabled')  # Shows event log
         self.log_text.pack(side=LEFT, fill=Y)
         scrollbar = Scrollbar(log_frame, command=self.log_text.yview)
         scrollbar.pack(side=RIGHT, fill=Y)
         self.log_text['yscrollcommand'] = scrollbar.set
 
-        # Video frame display
-        self.frame_width = 640  # Default width
-        self.frame_height = 480  # Default height
+        # Video display (left side)
+        self.frame_width = 640  # Default video frame width
+        self.frame_height = 480  # Default video frame height
         black_img = Image.new('RGB', (self.frame_width, self.frame_height), color='black')
         self.blank_imgtk = ImageTk.PhotoImage(image=black_img)
-        self.frame_label = Label(main_frame, image=self.blank_imgtk, bg='black')
-        self.frame_label.imgtk = self.blank_imgtk  # Keep reference!
+        self.frame_label = Label(main_frame, image=self.blank_imgtk, bg='black')  # Where video frames are shown
+        self.frame_label.imgtk = self.blank_imgtk  # Keep reference to avoid garbage collection
         self.frame_label.pack(side=LEFT, padx=10, pady=10)
-        
-        
-        # Use a vertical container for all controls
+
+        # Controls container (vertical stack of buttons and controls)
         controls_container = Frame(main_frame)
         controls_container.pack(side=LEFT, fill=Y, padx=5, pady=10)
         controls_container.pack(fill='y', expand=True)
 
-        # Add Instructions button above Open Video
+        # --- Control Buttons ---
+        # Instructions button opens README in a new window
         self.instructions_btn = Button(controls_container, text="Instructions", command=self.show_instructions)
         self.instructions_btn.pack(side='top', pady=(0, 8), fill='x')
-        # Open Video Button just below Instructions
+
+        # Open Video button lets user select a video file
         self.open_btn = Button(controls_container, text="Open Video", command=self.open_video)
         self.open_btn.pack(side='top', pady=(0, 16), fill='x')
 
-        # Video playback controls (grouped)
+        # Video playback controls (play, pause, speed, frame navigation, skip)
         kb_btn_frame = Frame(controls_container)
         kb_btn_frame.pack(side='top', pady=(16, 16), fill='x')
         Button(kb_btn_frame, text="Play/Pause", command=lambda: VideoProcessor.toggle_play(self)).pack(side='top', pady=1, fill='x')
         speed_frame = Frame(kb_btn_frame)
         speed_frame.pack(fill='x', pady=1)
         Button(speed_frame, text="Speed -", command=lambda: VideoProcessor.slow_down(self)).pack(side='left', expand=True, fill='x')
-        self.status_label = Label(speed_frame, anchor='center', width=5)
+        self.status_label = Label(speed_frame, anchor='center', width=5)  # Shows current speed
         self.status_label.pack(side='left', padx=4, fill='x', expand=True)
         Button(speed_frame, text="Speed +", command=lambda: VideoProcessor.speed_up(self)).pack(side='left', expand=True, fill='x')
-        # Frame shift side by side
+        # Frame navigation
         frame_frame = Frame(kb_btn_frame)
         frame_frame.pack(fill='x', pady=1)
         Button(frame_frame, text="Prev Frame", command=lambda: VideoProcessor.prev_frame(self)).pack(side='left', expand=True, fill='x')
         Button(frame_frame, text="Next Frame", command=lambda: VideoProcessor.next_frame(self)).pack(side='left', expand=True, fill='x')
-        # Skip 5s side by side
+        # Skip 5s
         skip5s_frame = Frame(kb_btn_frame)
         skip5s_frame.pack(fill='x', pady=1)
         Button(skip5s_frame, text="Skip -5s", command=lambda: VideoProcessor.skip_back_5s(self)).pack(side='left', expand=True, fill='x')
         Button(skip5s_frame, text="Skip +5s", command=lambda: VideoProcessor.skip_forward_5s(self)).pack(side='left', expand=True, fill='x')
-        # Skip 5min side by side
+        # Skip 5min
         skip5min_frame = Frame(kb_btn_frame)
         skip5min_frame.pack(fill='x', pady=1)
         Button(skip5min_frame, text="Skip -5min", command=lambda: VideoProcessor.skip_back_5min(self)).pack(side='left', expand=True, fill='x')
         Button(skip5min_frame, text="Skip +5min", command=lambda: VideoProcessor.skip_forward_5min(self)).pack(side='left', expand=True, fill='x')
-        # Skip 1hr side by side
+        # Skip 1hr
         skip1hr_frame = Frame(kb_btn_frame)
         skip1hr_frame.pack(fill='x', pady=1)
         Button(skip1hr_frame, text="Skip -1hr", command=lambda: VideoProcessor.skip_back_1hr(self)).pack(side='left', expand=True, fill='x')
         Button(skip1hr_frame, text="Skip +1hr", command=lambda: VideoProcessor.skip_forward_1hr(self)).pack(side='left', expand=True, fill='x')
 
-        # Log-related buttons (grouped)
+        # Log-related controls (export, clear, undo/redo, search, delete)
         log_btn_frame = Frame(controls_container)
         log_btn_frame.pack(side='top', pady=(40, 16), fill='x')
-        self.export_btn = Button(log_btn_frame, text="Export Log", command=lambda: self.logger.export_log(self))
+        self.export_btn = Button(log_btn_frame, text="Export Log", command=lambda: self.logger.export_log(self))  # Export log to CSV
         self.export_btn.pack(side='top', pady=2, fill='x')
-        self.clear_btn = Button(log_btn_frame, text="Clear Log", command=lambda: self.logger.clear_log(self))
+        self.clear_btn = Button(log_btn_frame, text="Clear Log", command=lambda: self.logger.clear_log(self))    # Clear log
         self.clear_btn.pack(side='top', pady=2, fill='x')
         undo_frame = Frame(log_btn_frame)
         undo_frame.pack(fill='x', pady=1)
         Button(undo_frame, text="Undo", command=lambda: self.logger.restore_last_undo(self)).pack(side='left', expand=True, fill='x')
         Button(undo_frame, text="Redo", command=lambda: self.logger.redo(self)).pack(side='left', expand=True, fill='x')
-        # Add Search Log button to log_btn_frame
-        Button(log_btn_frame, text="Search Log", command=self.prompt_search_log).pack(side='top', pady=2, fill='x')
+        Button(log_btn_frame, text="Search Log", command=self.prompt_search_log).pack(side='top', pady=2, fill='x')  # Search log entries
+        Button(log_btn_frame, text="Delete Entry", command=lambda: self.logger.undo(self)).pack(side='bottom', pady=2, fill='x')  # Delete last entry
 
-        # Delete entry button at the bottom of the controls container
-        Button(log_btn_frame, text="Delete Entry", command=lambda: self.logger.undo(self)).pack(side='bottom', pady=2, fill='x')
-
-        # Quit button at the very bottom, spaced from above
+        # Quit button at the very bottom
         Button(controls_container, text="Save and Quit", command=self.root.quit).pack(side='bottom', pady=16, fill='x')
 
         # Prevent window from resizing automatically to fit widgets
@@ -114,25 +114,26 @@ class CarCounterGUI:
         self.root.maxsize(self.root.winfo_width(), self.root.winfo_height())
         self.root.resizable(False, False)
 
-        # Keyboard shortcuts
-        self.root.bind('<space>', lambda e: VideoProcessor.toggle_play(self))           # space to toggle play/pause
-        self.root.bind('<KeyPress-equal>', lambda e: VideoProcessor.speed_up(self))     # equal key to speed up
-        self.root.bind('<KeyPress-minus>', lambda e: VideoProcessor.slow_down(self))    # minus key to slow down
-        self.root.bind('<comma>', lambda e: VideoProcessor.prev_frame(self))            # comma to go to previous frame
-        self.root.bind('<period>', lambda e: VideoProcessor.next_frame(self))           # period to go to next frame
-        self.root.bind('<semicolon>', lambda e: VideoProcessor.skip_back_5s(self))      # semicolon to skip back 5 seconds
-        self.root.bind("'", lambda e: VideoProcessor.skip_forward_5s(self))             # apostrophe to skip forward 5 seconds
-        self.root.bind('[', lambda e: VideoProcessor.skip_back_5min(self))              # left bracket to skip back 5 minutes
-        self.root.bind(']', lambda e: VideoProcessor.skip_forward_5min(self))           # right bracket to skip forward 5 minutes
-        self.root.bind('{', lambda e: VideoProcessor.skip_back_1hr(self))               # left brace to skip back 1 hour
-        self.root.bind('}', lambda e: VideoProcessor.skip_forward_1hr(self))            # right brace to skip forward 1 hour
-        self.root.bind('<BackSpace>', lambda e: self.logger.undo(self))                 # Backspace to delete last entry
-        self.root.bind('<Control-z>', lambda e: self.logger.restore_last_undo(self))    # Ctrl+Z for undo
-        self.root.bind('<Control-y>', lambda e: self.logger.redo(self))                 # Ctrl+Y for redo
-        self.log_text.bind('<Button-1>', self.on_log_click)                             # Click on log to highlight entry
-        self.root.bind('<Escape>', lambda e: self.root.quit())                          # Escape key to quit
-
-        # Bind all alphabet keys to log_key_event
+        # --- Keyboard Shortcuts ---
+        # Video controls
+        self.root.bind('<space>', lambda e: VideoProcessor.toggle_play(self))           # Space: play/pause
+        self.root.bind('<KeyPress-equal>', lambda e: VideoProcessor.speed_up(self))     # =: speed up
+        self.root.bind('<KeyPress-minus>', lambda e: VideoProcessor.slow_down(self))    # -: slow down
+        self.root.bind('<comma>', lambda e: VideoProcessor.prev_frame(self))            # ,: previous frame
+        self.root.bind('<period>', lambda e: VideoProcessor.next_frame(self))           # .: next frame
+        self.root.bind('<semicolon>', lambda e: VideoProcessor.skip_back_5s(self))      # ;: skip back 5s
+        self.root.bind("'", lambda e: VideoProcessor.skip_forward_5s(self))            # ': skip forward 5s
+        self.root.bind('[', lambda e: VideoProcessor.skip_back_5min(self))              # [: skip back 5min
+        self.root.bind(']', lambda e: VideoProcessor.skip_forward_5min(self))           # ]: skip forward 5min
+        self.root.bind('{', lambda e: VideoProcessor.skip_back_1hr(self))               # {: skip back 1hr
+        self.root.bind('}', lambda e: VideoProcessor.skip_forward_1hr(self))            # }: skip forward 1hr
+        # Log controls
+        self.root.bind('<BackSpace>', lambda e: self.logger.undo(self))                 # Backspace: delete last entry
+        self.root.bind('<Control-z>', lambda e: self.logger.restore_last_undo(self))    # Ctrl+Z: undo
+        self.root.bind('<Control-y>', lambda e: self.logger.redo(self))                 # Ctrl+Y: redo
+        self.log_text.bind('<Button-1>', self.on_log_click)                             # Click log: highlight entry
+        self.root.bind('<Escape>', lambda e: self.root.quit())                          # Escape: quit
+        # Bind all alphabet keys to log_key_event (for event logging)
         for char in 'abcdefghijklmnopqrstuvwxyz':
             self.root.bind(f'<KeyPress-{char}>', self.log_key_event)
             self.root.bind(f'<KeyPress-{char.upper()}>', self.log_key_event)
@@ -140,6 +141,10 @@ class CarCounterGUI:
 ## GUI Functions ##########################################################
 
     def open_video(self, event=None):
+        """
+        Opens a file dialog for the user to select a video file. Initializes the video processor and logger,
+        prompts for the video start time, and displays the first frame and log.
+        """
         path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov")])
         if path:
             self.video_path = path
@@ -166,6 +171,9 @@ class CarCounterGUI:
             self.update_log_display()
 
     def update_log_display(self, highlight_line=None, highlight_lines=None):
+        """
+        Updates the log display area with the contents of the log file. Optionally highlights a specific line or lines.
+        """
         if self.logger:
             try:
                 with open(self.logger.filename, 'r') as f:
@@ -193,6 +201,9 @@ class CarCounterGUI:
         self.log_text.config(state='disabled')
 
     def on_log_click(self, event):
+        """
+        Handles clicks on the log display. Highlights the clicked line and seeks the video to the corresponding timestamp.
+        """
         # Remove previous highlight
         self.log_text.tag_remove('highlight', '1.0', 'end')
         # Get the line number clicked
@@ -233,6 +244,10 @@ class CarCounterGUI:
             pass
 
     def log_key_event(self, event):
+        """
+        Handles key press events for logging. Logs the key and current timestamp to the CSV, updates the log display,
+        and highlights the new entry.
+        """
         key = event.char
         if not key.isalpha():
             return
@@ -258,12 +273,18 @@ class CarCounterGUI:
         self.update_log_display(highlight_line=highlight_line)
 
     def prompt_search_log(self):
+        """
+        Prompts the user for a search term and highlights all matching entries in the log display.
+        This, and the .search_entries method in CSVLogger, are very basic. Use excel or similar for more advanced searching.
+        """
         search_term = simpledialog.askstring("Search Log", "Enter search term:", parent=self.root)
         if search_term and self.logger:
             self.logger.search_entries(search_term, self)
 
     def show_instructions(self):
-        """Open a new window and display the contents of README.md."""
+        """
+        Opens a new window and displays the contents of README.md as instructions for the user.
+        """
         instructions_win = Toplevel(self.root)
         instructions_win.title("Instructions")
         instructions_win.geometry("700x600")

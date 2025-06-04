@@ -1,2 +1,3 @@
 opencv-python
 Pillow
+# this file is used to install the required packages for the project. See README.md for more details.

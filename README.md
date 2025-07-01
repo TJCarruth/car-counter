@@ -35,6 +35,10 @@ You can use [PyInstaller](https://pyinstaller.org/) to create a standalone execu
    ```
 3. The standalone executable will be found in the `dist` folder.
 
+## Linux
+Use the follow command instead to compile properly on a linux distro:
+pyinstaller --collect-submodules PIL --onefile main_gui.py
+
 ## Usage
 1. Run the main application:
    ```sh

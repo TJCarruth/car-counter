@@ -7,3 +7,6 @@ videos/*
 !videos/.gitkeep
 __pycache__/csv_logger.cpython-313.pyc
 __pycache__/video_processor.cpython-313.pyc
+
+# Ignore the virtual environment in venv
+venv/

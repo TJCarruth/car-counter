@@ -8,5 +8,9 @@ videos/*
 __pycache__/csv_logger.cpython-313.pyc
 __pycache__/video_processor.cpython-313.pyc
 
-# Ignore the virtual environment in venv
+# Ignore the virtual environment, python binaries, and build folders
 venv/
+*.pyc
+__pycache__/
+build/
+main_gui.spec

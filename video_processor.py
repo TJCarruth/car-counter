@@ -2,6 +2,7 @@ import cv2
 import os
 from datetime import timedelta, datetime
 from PIL import Image, ImageTk
+import time
 
 class VideoProcessor:
     @staticmethod
@@ -28,11 +29,17 @@ class VideoProcessor:
         Play the video by reading frames and updating the GUI at the current speed.
         """
         if not gui.paused and gui.video and gui.video.isOpened():
+            # start = time.time()                   # start, read_time, and show_time are used for debugging timing
             ret, frame = gui.video.read()
+            # read_time = time.time()
             if not ret:
                 return
             VideoProcessor.show_frame(gui, frame)
-            delay = int(30 / gui.speed)
+            # show_time = time.time()
+            fps = gui.video.get(cv2.CAP_PROP_FPS)
+            delay = int(1000 / (fps * gui.speed)) if fps > 0 else 33
+            #print(f"Frame read: {read_time - start:.4f}s, Show frame: {show_time - read_time:.4f}s")
+            # This print statement is for debugging purposes to check the timing of frame reading and showing
             gui.root.after(delay, lambda: VideoProcessor.play_video(gui))
 
     @staticmethod
@@ -47,9 +54,11 @@ class VideoProcessor:
                 gui.frame_label.imgtk = gui.blank_imgtk
                 return
         if frame is not None:
+            # Resize with OpenCV for speed
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            if (frame_rgb.shape[1], frame_rgb.shape[0]) != (gui.frame_width, gui.frame_height):
+                frame_rgb = cv2.resize(frame_rgb, (gui.frame_width, gui.frame_height), interpolation=cv2.INTER_LINEAR)
             img = Image.fromarray(frame_rgb)
-            img = img.resize((gui.frame_width, gui.frame_height), Image.LANCZOS)
             imgtk = ImageTk.PhotoImage(image=img)
             gui.frame_label.imgtk = imgtk
             gui.frame_label.config(image=imgtk)

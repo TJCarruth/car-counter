@@ -1,5 +1,8 @@
 # Car Counter
 
+This add is deprecated! It has been replaced by vlc-video-logger. This version of the project does not handle video play back well. The [new version](https://github.com/TJCarruth/vlc-video-logger) requires VLC media player to be on the device as well, but handles video playback much better. 
+
+
 A Python application for playing back camera footage and logging car counts via key presses. The app outputs a CSV file that logs each key press and its corresponding timestamp, making it easy to analyze traffic or vehicle flow from recorded video.
 
 ## Features
